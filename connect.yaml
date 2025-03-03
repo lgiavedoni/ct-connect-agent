@@ -117,8 +117,5 @@ inheritAs:
       - manage_customers
       - manage_orders
       - manage_payments
-      - manage_shipping
-      - manage_inventory
-      - manage_product_discounts
       - manage_stores
-      - manage_reviews
+      
