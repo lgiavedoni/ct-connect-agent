@@ -1,0 +1,7 @@
+{
+  "watch": ["src"],
+  "ext": "ts,json",
+  "ignore": ["src/**/*.spec.ts", "node_modules"],
+  "exec": "node -r ts-node/register --preserve-symlinks --enable-source-maps src/index.ts",
+  "delay": "500"
+} 
