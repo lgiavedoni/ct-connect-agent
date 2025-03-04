@@ -14,13 +14,13 @@ class CommercetoolsGraphQLClient {
       return this.tokenCache.token;
     }
 
-    const response = await fetch(`${this.config.authUrl}/oauth/token?grant_type=client_credentials`, {
+    const response = await fetch(`${this.config.authUrl}/oauth/token`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64')}`
       },
-      body: `scope=${encodeURIComponent(this.config.scope || '')}`,
+      body: `grant_type=client_credentials&scope=${encodeURIComponent(this.config.scope || '')}`,
     });
 
     if (!response.ok) {
