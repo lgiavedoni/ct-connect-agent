@@ -1,28 +1,12 @@
-import { GraphQLClient } from 'graphql-request';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { readConfiguration } from '../utils/config.utils';
 
 class CommercetoolsGraphQLClient {
-  private projectKey: string;
-  private clientId: string;
-  private clientSecret: string;
-  private scope: string;
-  private region: string;
-  private authUrl: string;
-  private apiUrl: string;
   private tokenCache: { token: string; expiresAt: number } | null;
+  private config: ReturnType<typeof readConfiguration>;
 
   constructor() {
-    this.projectKey = process.env.CTP_PROJECT_KEY || '';
-    this.clientId = process.env.CTP_CLIENT_ID || '';
-    this.clientSecret = process.env.CTP_CLIENT_SECRET || '';
-    this.scope = process.env.CTP_SCOPE || '';
-    this.region = process.env.CTP_REGION || '';
-    
-    this.authUrl = `https://auth.${this.region}.commercetools.com/oauth/token`;
-    this.apiUrl = `https://api.${this.region}.commercetools.com`;
     this.tokenCache = null;
+    this.config = readConfiguration();
   }
 
   async getAccessToken() {
@@ -30,13 +14,13 @@ class CommercetoolsGraphQLClient {
       return this.tokenCache.token;
     }
 
-    const response = await fetch(`${this.authUrl}?grant_type=client_credentials`, {
+    const response = await fetch(`${this.config.authUrl}/oauth/token?grant_type=client_credentials`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Basic ${Buffer.from(`${this.clientId}:${this.clientSecret}`).toString('base64')}`
+        'Authorization': `Basic ${Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64')}`
       },
-      body: `scope=${encodeURIComponent(this.scope)}`,
+      body: `scope=${encodeURIComponent(this.config.scope || '')}`,
     });
 
     if (!response.ok) {
@@ -58,63 +42,41 @@ class CommercetoolsGraphQLClient {
 
   async query(query: string, variables: Record<string, any> = {}) {
     const token = await this.getAccessToken();
-    const client = new GraphQLClient(
-      `${this.apiUrl}/${this.projectKey}/graphql`,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
+    
     try {
-      return await client.request(query, variables);
-    } catch (error: unknown) {
-      // Debug log to see the full error structure
-      // console.log('GraphQL Error Debug:', error);
+      const response = await fetch(`${this.config.apiUrl}/${this.config.projectKey}/graphql`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          query,
+          variables
+        })
+      });
 
-      if (error instanceof Error) {
-        const clientError = error as any;
-        
-        // If we get a 400 error, fetch the response directly to get the error details
-        if (clientError.response?.status === 400) {
-          try {
-            const response = await fetch(`${this.apiUrl}/${this.projectKey}/graphql`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-              },
-              body: JSON.stringify({
-                query,
-                variables
-              })
-            });
-
-            const errorData = await response.json();
-            
-            if (errorData.errors) {
-              const graphqlErrors = errorData.errors
-                .map((e: any) => {
-                  let message = e.message;
-                  if (e.locations) {
-                    message += ` (at line ${e.locations[0].line}, column ${e.locations[0].column})`;
-                  }
-                  if (e.extensions?.code) {
-                    message += ` [${e.extensions.code}]`;
-                  }
-                  return message;
-                })
-                .join('\n');
-              throw new Error(`GraphQL Validation Error:\n${graphqlErrors}`);
+      const data = await response.json();
+      
+      if (data.errors) {
+        const graphqlErrors = data.errors
+          .map((e: any) => {
+            let message = e.message;
+            if (e.locations) {
+              message += ` (at line ${e.locations[0].line}, column ${e.locations[0].column})`;
             }
-          } catch (fetchError) {
-            // If the direct fetch fails, fall back to a basic error message
-            throw new Error(`GraphQL Request Error (400): Invalid query syntax.\nQuery: ${query}. \nError: ${fetchError}`);
-          }
-        }
-
-        // Fallback error with the complete error message
+            if (e.extensions?.code) {
+              message += ` [${e.extensions.code}]`;
+            }
+            return message;
+          })
+          .join('\n');
+        throw new Error(`GraphQL Validation Error:\n${graphqlErrors}`);
+      }
+      
+      return data.data;
+    } catch (error) {
+      if (error instanceof Error) {
         throw new Error(`GraphQL Error: ${error.message}`);
       }
       
