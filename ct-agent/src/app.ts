@@ -3,6 +3,7 @@ dotenv.config();
 
 import express, { Express } from 'express';
 import bodyParser from 'body-parser';
+import cors from 'cors';
 
 // Import routes
 import ServiceRoutes from './routes/service.route';
@@ -19,6 +20,14 @@ const app: Express = express();
 app.disable('x-powered-by');
 
 // Define configurations
+app.use(cors({
+  origin: '*', // Allow any origin
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+  credentials: false // Set to false when using '*' as origin
+})); // Enable CORS for any origin
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 

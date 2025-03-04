@@ -43,6 +43,9 @@ deployAs:
         - key: ANTHROPIC_API_KEY
           description: Anthropic API key
           required: true
+        - key: OPENAI_API_KEY
+          description: OpenAI API key
+          required: true
 
 
   # - name: job

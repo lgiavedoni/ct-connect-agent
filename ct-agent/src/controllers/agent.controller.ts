@@ -39,6 +39,23 @@ const systemPrompt: string = `
     When there is an error with the GraphQL query, you will need to fix it by using the generateGraphQLQuery tool again and providing the error message.
     Only use the GraphQL tools when necessary - not all requests need to interact with the database.
     The user is a human, so your response should be in a natural language and easy to understand.
+
+
+    Return the response in the following format:
+    {
+      "response": "The response to the user's request",
+      "graphql_query": [
+        {
+          "query": "The generated GraphQL query that where successfully executed",
+          "query_type": "The type of the query that was executed. Example: Read, Write",
+        }
+      ],
+      "entities": [
+        {
+          "entity_type": "The type of the entity that has been involved in this oporation. Example: Products, Orders..",
+        }
+      ]
+    }
 `;
 
 export const angetHandler = async (request: AgentRequest, response: Response): Promise<Response> => {

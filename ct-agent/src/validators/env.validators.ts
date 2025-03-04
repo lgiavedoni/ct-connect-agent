@@ -2,7 +2,7 @@ import {
   optional,
   standardString,
   standardKey,
-  region,
+  // region,
 } from './helpers.validators';
 
 /**
@@ -45,11 +45,11 @@ const envValidators = [
     { min: 2, max: undefined }
   ),
 
-  region(['region'], {
-    code: 'InvalidRegion',
-    message: 'Not a valid region.',
-    referencedBy: 'environmentVariables',
-  }),
+  // region(['region'], {
+  //   code: 'InvalidRegion',
+  //   message: 'Not a valid region.',
+  //   referencedBy: 'environmentVariables',
+  // }),
 ];
 
 export default envValidators;

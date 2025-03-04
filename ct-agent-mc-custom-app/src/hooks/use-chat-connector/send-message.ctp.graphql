@@ -1,0 +1,8 @@
+mutation SendChatMessage($message: String!) {
+  sendChatMessage(message: $message) {
+    id
+    content
+    timestamp
+    sender
+  }
+} 
