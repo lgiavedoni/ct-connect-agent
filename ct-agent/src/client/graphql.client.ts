@@ -15,13 +15,26 @@ class CommercetoolsGraphQLClient {
     //   return this.tokenCache.token;
     // } 
 
+    // Format scope to ensure project key is included in each permission
+    let formattedScope = this.config.scope || '';
+    if (formattedScope && this.config.projectKey) {
+      // Check if scope already includes project key format (manage_x:project_key)
+      if (!formattedScope.includes(`:${this.config.projectKey}`)) {
+        // Split scope into individual permissions and append project key to each
+        formattedScope = formattedScope
+          .split(' ')
+          .map(permission => `${permission}:${this.config.projectKey}`)
+          .join(' ');
+      }
+    }
+
     // Log authentication request details
     logger.info('Authenticating with commercetools', {
       authUrl: this.config.authUrl,
       clientId: this.config.clientId,
       projectKey: this.config.projectKey,
-      scope: this.config.scope || '',
-      requestBody: `grant_type=client_credentials&scope=${encodeURIComponent(this.config.scope || '')}`
+      scope: formattedScope,
+      requestBody: `grant_type=client_credentials&scope=${encodeURIComponent(formattedScope)}`
     });
 
     const response = await fetch(`${this.config.authUrl}/oauth/token`, {
@@ -30,7 +43,7 @@ class CommercetoolsGraphQLClient {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Authorization': `Basic ${Buffer.from(`${this.config.clientId}:${this.config.clientSecret}`).toString('base64')}`
       },
-      body: `grant_type=client_credentials&scope=${encodeURIComponent(this.config.scope || '')}`,
+      body: `grant_type=client_credentials&scope=${encodeURIComponent(formattedScope)}`,
     });
 
     if (!response.ok) {
