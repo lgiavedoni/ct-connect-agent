@@ -1,4 +1,5 @@
 import { readConfiguration } from '../utils/config.utils';
+import { logger } from '../utils/logger.utils';
 
 class CommercetoolsGraphQLClient {
   private tokenCache: { token: string; expiresAt: number } | null;
@@ -10,9 +11,18 @@ class CommercetoolsGraphQLClient {
   }
 
   async getAccessToken() {
-    if (this.tokenCache && this.tokenCache.expiresAt > Date.now()) {
-      return this.tokenCache.token;
-    }
+    // if (this.tokenCache && this.tokenCache.expiresAt > Date.now()) {
+    //   return this.tokenCache.token;
+    // } 
+
+    // Log authentication request details
+    logger.info('Authenticating with commercetools', {
+      authUrl: this.config.authUrl,
+      clientId: this.config.clientId,
+      projectKey: this.config.projectKey,
+      scope: this.config.scope || '',
+      requestBody: `grant_type=client_credentials&scope=${encodeURIComponent(this.config.scope || '')}`
+    });
 
     const response = await fetch(`${this.config.authUrl}/oauth/token`, {
       method: 'POST',

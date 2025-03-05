@@ -51,9 +51,9 @@ export const generateGraphQLQuery = createNamedTool(
     description: 'This tool MUST be used FIRST to generate a valid GraphQL query based on a natural language request. It has access to the commercetools platform schema. After generating a query with this tool, you should then execute it using the executeGraphQLQuery tool.',
     parameters: z.object({
       request: z.string().describe('The natural language request to convert to a GraphQL query'),
-      previous_queries: z.array(z.string()).describe('The previous queries that have been executed and failed (include the error message in the query). This is important to know so that you can generate a query that will return the correct data.')
+      previous_queries: z.array(z.string()).optional().describe('The previous queries that have been executed and failed (include the error message in the query). This is important to know so that you can generate a query that will return the correct data.')
     }),
-    execute: async ({ request, previous_queries }) => {
+    execute: async ({ request, previous_queries = [] }) => {
       logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${previous_queries.length}]`);
 
       if (previous_queries.length > 0) {
