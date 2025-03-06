@@ -32,6 +32,14 @@ export const cleanJson = (jsonString: string): Record<string, any> => {
       }
     }
 
+    // Remove everything before the first '{' and after the last '}' if JSON text exists
+    const firstBraceIndex = cleaned.indexOf('{');
+    const lastBraceIndex = cleaned.lastIndexOf('}');
+    
+    if (firstBraceIndex !== -1 && lastBraceIndex !== -1 && lastBraceIndex > firstBraceIndex) {
+      cleaned = cleaned.substring(firstBraceIndex, lastBraceIndex + 1);
+    }
+
     // Parse the cleaned string to an object
     return JSON.parse(cleaned);
   } catch (error: unknown) {

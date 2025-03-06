@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useApplicationContext } from '@commercetools-frontend/application-shell-connectors';
 import { actions } from '@commercetools-frontend/sdk';
 import { useAsyncDispatch } from '@commercetools-frontend/sdk';
 import { createMessageFromResponse } from '../../models/chat-response';
 
 // Get the API URL from environment variables
-const AI_AGENT_API_URL = process.env.REACT_APP_AI_AGENT_API_URL || 'https://68bf-2a0c-5a84-b207-900-cc63-222a-f414-edce.ngrok-free.app/agent';
+const AI_AGENT_API_URL = process.env.REACT_APP_AI_AGENT_API_URL || 'https://9447-188-26-215-219.ngrok-free.app/agent';
 
 export const useChatConnector = () => {
   const [messages, setMessages] = useState([
@@ -24,6 +24,16 @@ export const useChatConnector = () => {
   const [error, setError] = useState(null);
   const dispatch = useAsyncDispatch();
   const { projectKey } = useApplicationContext();
+  
+  // Use a ref to track if the component is mounted
+  const isMounted = useRef(true);
+  
+  // Set isMounted to false when the component unmounts
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
@@ -45,111 +55,70 @@ export const useChatConnector = () => {
     setError(null);
 
     try {
+      // Convert existing messages to the format expected by the API
+      const chatHistory = messages.map(msg => ({
+        id: msg.id,
+        createdAt: new Date(msg.timestamp),
+        content: msg.content,
+        role: msg.sender === 'user' ? 'user' : msg.sender === 'ai' ? 'assistant' : 'system'
+      }));
+      
+      // Add the new user message to the chat history
+      chatHistory.push({
+        id: userMessage.id,
+        createdAt: new Date(userMessage.timestamp),
+        content: userMessage.content,
+        role: 'user'
+      });
+
       // Use the Merchant Center Proxy Router to forward the request to the external API
       const response = await dispatch(
         actions.forwardTo.post({
           uri: AI_AGENT_API_URL,
           payload: {
-            human_request: messageText,
+            messages: chatHistory,
           },
           // The following headers are required for the Merchant Center Proxy Router
           headers: {
             'Accept-Version': 'v1',
           },
+          // Extended timeout (in milliseconds) for longer API processing time
+          timeout: 60000, // 60 seconds timeout
         })
       );
       
-      // FOR TESTING PURPOSES ONLY - REMOVE IN PRODUCTION
-      // This simulates a response with GraphQL queries and entities
-      if (process.env.NODE_ENV === 'development' && !response) {
-        const testResponse = {
-          response: `Here's information about the product you requested: Classic White T-Shirt, price: $19.99, available in sizes S, M, L, XL. I've also found 3 recent orders for this product.`,
-          graphql_query: [
-            {
-              query: `
-query {
-  products(where: "name=\\"Classic White T-Shirt\\"") {
-    results {
-      id
-      name
-      masterData {
-        current {
-          name
-          description
-          variants {
-            prices {
-              value {
-                centAmount
-                currencyCode
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}`,
-              query_type: 'Read',
-            },
-            {
-              query: `
-query {
-  orders(where: "lineItems(name=\\"Classic White T-Shirt\\")", limit: 3, sort: "createdAt desc") {
-    results {
-      id
-      orderNumber
-      createdAt
-      customerEmail
-      totalPrice {
-        centAmount
-        currencyCode
-      }
-    }
-  }
-}`,
-              query_type: 'Read',
-            }
-          ],
-          entities: [
-            {
-              entity_type: 'Products',
-            },
-            {
-              entity_type: 'Orders',
-            }
-          ]
-        };
-        
-        // Create AI response message from the test response
-        const aiResponse = createMessageFromResponse(testResponse);
+      // Only update state if the component is still mounted
+      if (isMounted.current) {
+        // Create AI response message from the API response using our model
+        const aiResponse = createMessageFromResponse(response);
         setMessages((prevMessages) => [...prevMessages, aiResponse]);
-        setIsLoading(false);
-        return;
       }
-      
-      // Create AI response message from the API response using our model
-      const aiResponse = createMessageFromResponse(response);
-
-      setMessages((prevMessages) => [...prevMessages, aiResponse]);
     } catch (err) {
       console.error('Error sending message:', err);
-      setError(err);
       
-      // Add error message to chat
-      const errorMessage = {
-        id: `error-${Date.now()}`,
-        content: `Error: ${err.message || 'Failed to get response from AI assistant'}. Make sure your API server is running at ${AI_AGENT_API_URL} and is properly configured to accept requests from the Merchant Center.`,
-        timestamp: new Date().toISOString(),
-        sender: 'system',
-        metadata: {
-          graphql_queries: [],
-          entities: [],
-        },
-      };
-      
-      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      // Only update state if the component is still mounted
+      if (isMounted.current) {
+        setError(err);
+        
+        // Add error message to chat
+        const errorMessage = {
+          id: `error-${Date.now()}`,
+          content: `Error: Failed to fetch. Make sure your API server is running at ${AI_AGENT_API_URL} and is properly configured to accept requests from the Merchant Center.`,
+          timestamp: new Date().toISOString(),
+          sender: 'system',
+          metadata: {
+            graphql_queries: [],
+            entities: [],
+          },
+        };
+        
+        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      }
     } finally {
-      setIsLoading(false);
+      // Only update state if the component is still mounted
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
 

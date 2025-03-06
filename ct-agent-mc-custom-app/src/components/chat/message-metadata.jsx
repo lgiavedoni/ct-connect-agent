@@ -4,57 +4,45 @@ import { useIntl } from 'react-intl';
 import Spacings from '@commercetools-uikit/spacings';
 import Text from '@commercetools-uikit/text';
 import SecondaryButton from '@commercetools-uikit/secondary-button';
+import Tag from '@commercetools-uikit/tag';
+import { TagList } from '@commercetools-frontend/ui-kit';
 import { QUERY_TYPES, ENTITY_TYPES } from '../../models/chat-response';
 import styles from './message-metadata.module.css';
 
 // GraphQL logo URL
 const GRAPHQL_LOGO_URL = 'https://www.vectorlogo.zone/logos/graphql/graphql-icon.svg';
 
-// Map entity types to CSS class names for visual distinction
-const ENTITY_TAG_CLASSES = {
-  [ENTITY_TYPES.PRODUCTS]: styles.tagProducts,
-  [ENTITY_TYPES.ORDERS]: styles.tagOrders,
-  [ENTITY_TYPES.CUSTOMERS]: styles.tagCustomers,
-  [ENTITY_TYPES.CARTS]: styles.tagCarts,
-  [ENTITY_TYPES.CATEGORIES]: styles.tagCategories,
+// Map entity types to tag types for visual distinction
+const ENTITY_TAG_TYPES = {
+  [ENTITY_TYPES.PRODUCTS]: 'normal',
+  [ENTITY_TYPES.ORDERS]: 'normal',
+  [ENTITY_TYPES.CUSTOMERS]: 'normal',
+  [ENTITY_TYPES.CARTS]: 'normal',
+  [ENTITY_TYPES.CATEGORIES]: 'normal',
 };
 
-// Map query types to CSS class names
-const QUERY_TAG_CLASSES = {
-  [QUERY_TYPES.READ]: styles.tagRead,
-  [QUERY_TYPES.WRITE]: styles.tagWrite,
-};
-
-// Custom tag component
-const CustomTag = ({ children, className }) => (
-  <span className={`${styles.customTag} ${className || ''}`}>
-    {children}
-  </span>
-);
-
-CustomTag.propTypes = {
-  children: PropTypes.node.isRequired,
-  className: PropTypes.string,
+// Map query types to tag types
+const QUERY_TAG_TYPES = {
+  [QUERY_TYPES.READ]: 'normal',
+  [QUERY_TYPES.WRITE]: 'normal',
 };
 
 const EntityTags = ({ entities }) => {
   if (!entities || entities.length === 0) return null;
   
+  // Create tag elements for each entity
+  const tags = entities.map((entity, index) => (
+    <Tag 
+      key={`entity-${index}`}
+      type="normal"
+    >
+      {entity.entity_type}
+    </Tag>
+  ));
+  
   return (
     <div className={styles.entityTags}>
-      {entities.map((entity, index) => {
-        // Get the CSS class for this entity type or use default
-        const tagClass = ENTITY_TAG_CLASSES[entity.entity_type] || styles.tagDefault;
-        
-        return (
-          <CustomTag 
-            key={`entity-${index}`}
-            className={tagClass}
-          >
-            {entity.entity_type}
-          </CustomTag>
-        );
-      })}
+      <TagList>{tags}</TagList>
     </div>
   );
 };
@@ -70,6 +58,16 @@ EntityTags.propTypes = {
 const GraphQLQueries = ({ queries }) => {
   if (!queries || queries.length === 0) return null;
   
+  // Create tag elements for query types
+  const queryTypeTags = queries.map((query, index) => (
+    <Tag
+      key={`query-type-${index}`}
+      type="normal"
+    >
+      {query.query_type}
+    </Tag>
+  ));
+  
   return (
     <div className={styles.queriesPanel}>
       <Spacings.Stack scale="s">
@@ -78,19 +76,7 @@ const GraphQLQueries = ({ queries }) => {
             GraphQL Queries ({queries.length})
           </Text.Body>
           <div className={styles.queryTypeTags}>
-            {queries.map((query, index) => {
-              // Get the CSS class for this query type or use default
-              const tagClass = QUERY_TAG_CLASSES[query.query_type] || styles.tagDefault;
-              
-              return (
-                <CustomTag
-                  key={`query-type-${index}`}
-                  className={tagClass}
-                >
-                  {query.query_type}
-                </CustomTag>
-              );
-            })}
+            <TagList>{queryTypeTags}</TagList>
           </div>
         </div>
         

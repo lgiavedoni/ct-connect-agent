@@ -31,8 +31,8 @@ export const ENTITY_TYPES = {
 
 /**
  * @typedef {Object} ChatResponse
- * @property {string} response - The text response to the user's request
- * @property {GraphQLQuery[]} [graphql_query] - Array of GraphQL queries executed
+ * @property {string} answer - The text response to the user's request
+ * @property {GraphQLQuery[]} [graphql_queries] - Array of GraphQL queries executed
  * @property {Entity[]} [entities] - Array of entities involved in the operation
  */
 
@@ -43,9 +43,14 @@ export const ENTITY_TYPES = {
  * @returns {Object} A message object with the response content and metadata
  */
 export const createMessageFromResponse = (response) => {
+  console.log('response', response);
+  
+  // Check if the response contains a confirmation tag
+  const content = response?.answer || 'Sorry, I didn\'t get a valid response.';
+  
   return {
     id: `ai-${Date.now()}`,
-    content: response?.answer || 'Sorry, I didn\'t get a valid response.',
+    content: content,
     timestamp: new Date().toISOString(),
     sender: 'ai',
     metadata: {

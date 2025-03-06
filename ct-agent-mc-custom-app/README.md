@@ -14,3 +14,6 @@ Read the [Getting started](https://docs.commercetools.com/merchant-center-custom
 # Developing the Custom Application
 
 Learn more about [developing a Custom Application](https://docs.commercetools.com/merchant-center-customizations/development) and [how to use the CLI](https://docs.commercetools.com/merchant-center-customizations/api-reference/cli).
+
+
+yarn start

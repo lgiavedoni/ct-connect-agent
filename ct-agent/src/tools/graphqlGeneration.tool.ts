@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger.utils';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { aiRunPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
 import { FileUtils } from '../utils/file.utils';
 
 const graphql_schema = `
@@ -36,14 +36,15 @@ try {
 
 const systemPrompt = `
             You are a GraphQL query expert that will be given a natural language request and will need to convert it into a valid GraphQL query.
-            All your queries will be executed agains the commercetools platform. So make sure to use the correct fields and types.
+            All your queries will be executed (by another tools, never by yourself) against the commercetools platform. So make sure to use the correct fields and types.
             If the request can't be solved in a single query, you can split it into multiple queries. Or AT LEAST return the main one and provide feedback to the user.
             If there is absolutely no way to generate one (or many) valid query, return an empty string as the query and provide feedback to the user. But ALWAYS try your best to generate a query.
 
-            Return ONLY the GraphQL query without any explanations or markdown formatting.
             Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
 
             If you have previous queries that have failed, take them into account to generate a new query. Never repeat the same mistakes.
+
+            As much as possible try to always include the id and the name or any readible identifier for the object so the system and the user can identify the object. Follow your schema to know when this is possible.
 
             Use the following schema as a reference:
             ${graphql_schema}
@@ -59,11 +60,13 @@ const systemPrompt = `
             And additional grounding for the schema:
             ${groundingContent_schema}
 
-            Always return the following JSON structure:
-            {
-              "query": "<generated_query>", # Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
-              "feedback": "<feedback_to_user>" # Here you can provide feedback to the user about the query or follow up queries or ideas on how to complete the request.
-            }
+            <return_format>
+              Always return the following JSON structure:
+              {
+                "query": "<generated_query>", # Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
+                "feedback": "<feedback_to_user>" # Here you can provide feedback to the user about the query or follow up queries or ideas on how to complete the request.
+              }
+            </return_format>
 `;
 
 /**
@@ -102,6 +105,7 @@ export const generateGraphQLQuery = createNamedTool(
                   It has access to the commercetools platform schema. 
                   After generating a query with this tool, you should then execute it using the executeGraphQLQuery tool.
                   This tool ONLY returns the generated query, don't ask for any type of operation, only converts the request into a valid GraphQL query.
+                  This tools will NEVER execute the query, only generate it. So it can't create, update or delete data.
                   
                   `,
     parameters: z.object({
@@ -121,7 +125,7 @@ export const generateGraphQLQuery = createNamedTool(
 
       
 
-      const generatedQuery = await aiRunPrompt(request, systemPrompt, undefined, model_flash);//model_openai_gpt_4_o
+      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_flash);//model_openai_gpt_4_o
       
       // Clean the generated query
       const cleanedQuery = cleanGraphQLQuery(generatedQuery);

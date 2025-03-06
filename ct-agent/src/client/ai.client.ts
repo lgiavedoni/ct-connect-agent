@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google';
-import { generateText, Tool } from 'ai';
+import { generateText, Tool, Message } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
@@ -30,15 +30,15 @@ export const createNamedTool = <T extends Tool>(name: string, toolObj: T): T & {
 
 /**
  * Run a prompt through an AI model
- * @param user_prompt The user's prompt
  * @param system_prompt The system prompt
+ * @param messages The array of messages
  * @param tools Optional tools to provide to the model
- * @param model Optional model to use (defaults to model_openai_o1_mini)
+ * @param model Optional model to use (defaults to model_flash)
  * @returns The generated text
  */
 export const aiRunPrompt = async (
-  user_prompt: string, 
-  system_prompt: string, 
+  system_prompt: string,
+  messages: Message[],
   tools?: Tool[] | Record<string, Tool>,
   model = model_flash
 ) => {
@@ -54,10 +54,16 @@ export const aiRunPrompt = async (
       }, {})
     : tools;
 
+  // Use unshift to add the system message at the beginning of the array
+  messages.unshift({
+    role: 'system',
+    content: system_prompt,
+    id: 'system',
+  });
+
   const { text } = await generateText({
     model,
-    prompt: user_prompt,
-    system: system_prompt,
+    messages: messages,
     maxSteps: 15,
     tools: toolsObject,
     providerOptions: {
@@ -68,3 +74,26 @@ export const aiRunPrompt = async (
   
   return text;
 }
+
+/**
+ * Run a prompt through an AI model with a single user prompt
+ * @param system_prompt The system prompt
+ * @param user_prompt The user's prompt
+ * @param tools Optional tools to provide to the model
+ * @param model Optional model to use (defaults to model_flash)
+ * @returns The generated text
+ */
+export const aiRunPromptWithUserPrompt = async (
+  system_prompt: string,
+  user_prompt: string,
+  tools?: Tool[] | Record<string, Tool>,
+  model = model_flash
+) => {
+  const messages: Message[] = [{
+    role: 'user',
+    content: user_prompt,
+    id: 'user',
+  }];
+
+  return aiRunPrompt(system_prompt, messages, tools, model);
+};

@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { aiRunPrompt, createNamedTool } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool } from '../client/ai.client';
 
 // Define a weather tool with a custom name using the helper function
 const weatherTool = createNamedTool(
@@ -49,9 +49,9 @@ async function runExample() {
   const userPrompt = 'What is the weather in New York and what time is it in London?';
   
   // Using an array - the AI client will use the toolName property
-  const response = await aiRunPrompt(
-    userPrompt,
+  const response = await aiRunPromptWithUserPrompt(
     systemPrompt,
+    userPrompt,
     [weatherTool, timeTool]
   );
   

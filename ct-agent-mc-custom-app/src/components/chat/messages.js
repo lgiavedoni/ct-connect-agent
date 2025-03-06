@@ -17,6 +17,10 @@ export default defineMessages({
     id: 'Chat.sendButton',
     defaultMessage: 'Send',
   },
+  startChatButton: {
+    id: 'Chat.startChatButton',
+    defaultMessage: 'Start Chat',
+  },
   loadingMessage: {
     id: 'Chat.loadingMessage',
     defaultMessage: 'AI is thinking...',
@@ -27,6 +31,10 @@ export default defineMessages({
   },
   welcomeMessage: {
     id: 'Chat.welcomeMessage',
-    defaultMessage: 'Hello! I\'m your AI assistant. How can I help you today?',
+    defaultMessage: 'Hello! I\'m your AI assistant for commercetools. How can I help you today?',
+  },
+  welcomeSubtitle: {
+    id: 'Chat.welcomeSubtitle',
+    defaultMessage: 'Ask me anything about your products, orders, customers, or any other commercetools data.',
   },
 }); 
