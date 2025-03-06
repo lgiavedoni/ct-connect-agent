@@ -47,6 +47,14 @@ deployAs:
           description: OpenAI API key
           required: true
 
+  - name: ct-agent-mc-custom-app
+    applicationType: merchant-center-custom-application
+    configuration:
+      standardConfiguration:
+        - key: REACT_APP_AI_AGENT_API_URL
+          description: The URL of the AI Agent API
+          required: true
+        
 
   # - name: job
   #   applicationType: job

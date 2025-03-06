@@ -5,7 +5,10 @@ import { useAsyncDispatch } from '@commercetools-frontend/sdk';
 import { createMessageFromResponse } from '../../models/chat-response';
 
 // Get the API URL from environment variables
-const AI_AGENT_API_URL = process.env.REACT_APP_AI_AGENT_API_URL || 'https://9447-188-26-215-219.ngrok-free.app/agent';
+const AI_AGENT_API_URL = process.env.REACT_APP_AI_AGENT_API_URL || 
+                         'https://9447-188-26-215-219.ngrok-free.app/agent';
+console.log('AI Agent API URL:', AI_AGENT_API_URL);
+console.log('All env variables:', process.env);
 
 export const useChatConnector = () => {
   const [messages, setMessages] = useState([
