@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger.utils';
 import { tool } from 'ai';
 import { z } from 'zod';
-import graphqlClient from '../client/graphql.client';
+import graphqlClient from '../client/graphqlExecution.client';
 import { createNamedTool } from '../client/ai.client';
 
 /**
@@ -49,8 +49,13 @@ export const executeGraphQLQuery = createNamedTool(
 
     execute: async ({ query }) => {
       // Clean the query before execution
-      const cleanedQuery = cleanQuery(query);
-      logger.info(`Executing GraphQL query: ${cleanedQuery}`);
+      logger.info(`Executing GraphQL query: ${query}`);
+
+      // TODO: REmoving cleaning for now to avoid issues with the query.
+      const cleanedQuery = query;
+      
+      // const cleanedQuery = cleanQuery(query);
+      // logger.info(`Executing GraphQL query [cleaned]: ${cleanedQuery}`);
 
       try {
         const response = await graphqlClient.query(cleanedQuery);

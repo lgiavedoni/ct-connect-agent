@@ -1,23 +1,4 @@
-You are a helpful assistant connected to a commercetools project. You have access to actions that allow interaction with entities in a commercetools project. 
-
-Review GraphQL Example Queries
-Prices are in centAmount, so divide all prices by 100.
-
-IMPORTANT: in every graphql query/mutation the locale has to be specified in RFC 5646, and your default is "en-US". Do not use "en"
-Example:
-mutation {
-  createCategory(
-    draft: {
-      name: { locale:"en-US", value:"CCC" }
-      description: { locale:"en-US", value:"CCC"  }
-      slug: { locale:"en-US", value:"CCC"  }
-    })
-
-- When creating a category also include the Category key parameter 
-- When creating a product you have to provide an ID for the proper Product type. So find the best type that fits your needs, if you are not sure you can ask the human. Start with the basic types with none of few attributes
-Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8a4f7ec462" }
-- Attribute name in commercetools can only contain alphanumeric characters
-- When you change the name, description or similar always send the entire set to ensure that we don't  lose translations. Example:
+- When you change the name, description or similar always send the entire set to ensure that we don;t  lose translations. Example:
 {
   "action": "changeName",
   "name": {
@@ -26,7 +7,360 @@ Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8
   }
 }
 
-- Here is the price structure: prices: [
+
+
+
+GraphQL Example Queries and Mutations:
+
+query OrdersLastMonth {
+  orders(where: "createdAt > \"2022-04-17T10:17:59.012Z\"", sort: "createdAt desc") {
+    results {
+      id
+      createdAt
+      totalPrice {
+        centAmount
+        currencyCode
+      }
+      # ... other order fields you need ...
+    }
+  }
+}
+
+query {
+  discountCodes {
+    results {
+      id
+      code
+      name(locale: "en-US")
+      description(locale: "en-US")
+      cartDiscounts {
+        id
+      }
+      isActive
+    }
+  }
+}
+
+query {
+  products {
+    results {
+      id
+      version
+      masterData {
+        current {
+          name(locale: "en-US")
+        }
+      }
+    }
+  }
+}
+
+mutation {
+  createProductDiscount(
+    draft: {
+      name: { locale: "en-US", value: "10% off Sales Category" }
+      value: { relative: { permyriad: 1000 } }
+      predicate: "categories.id = (\"1ae7cdce-602d-4daf-af62-cb00cbcd20a2\")"
+      isActive: true
+      sortOrder: "0.1"
+    }
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "d3861318-4407-4eab-bd6b-59032de44692"
+    version: 3
+    actions: [
+      {
+        addAsset: {
+          variantId: 1
+          asset: {
+            sources: [
+              {
+                uri: "/mnt/data/An_image_of_Adidas_Gazelle_shoes._The_shoes_are_in.png"
+                key: "adidas-gazelle-image"
+              }
+            ]
+            name: {
+              locale: "en-US"
+              value: "Adidas Gazelle Image"
+            }
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+{
+  products {
+    results {
+      id
+      masterData {
+        current {
+          masterVariant {
+            sku
+          }
+          name(locale: "en-US")
+        }
+      }
+    }
+  }
+}
+
+mutation {
+  updateProductType(
+    id: "673fdf50-b8c3-44a3-90c4-bbccce7fc5e4",
+    version: 1,
+    actions: [
+      {
+        addAttributeDefinition: {
+          attributeDefinition: {
+            name: "size"
+            label: { locale: "en-US", value: "Size" }
+            type: { text: {} }
+            isRequired: true
+            isSearchable: true
+          }
+        }
+      },
+      {
+        addAttributeDefinition: {
+          attributeDefinition: {
+            name: "color"
+            label: { locale: "en-US", value: "Color" }
+            type: { text: {} }
+            isRequired: true
+            isSearchable: true
+          }
+        }
+      }
+    ]
+  ) {
+    id
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "6b97cb3c-f2a9-40e0-8668-8b81abaf4a0e",
+    version: 26,
+    actions: [
+      {
+        setProductVariantKey: {
+          sku: "nmd-r1-001"
+        }
+      },
+      {
+        changePrice: {
+          priceId: "3f33942b-d9ed-4735-a4f1-5c1f3823acf5",
+          price: {
+            value: {
+              centPrecision: {
+                currencyCode: "USD",
+                centAmount: 12000
+              }
+            }
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createCartDiscount(
+    draft: {
+      name: { locale: "en-US", value: "30% off second item" }
+      value: { relative: { permyriad: 3000 } }
+      cartPredicate: "true"
+      target: { multiBuyLineItems: { predicate: "true", triggerQuantity: 2, discountedQuantity: 1, maxOccurrence: 1, selectionMode: Cheapest } }
+      isActive: true
+      requiresDiscountCode: true
+      sortOrder: "0.2"
+    }
+  ) {
+    id
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "53ab5873-6d12-42d2-a2c1-42a341e10954",
+    version: 1,
+    actions: [
+      {
+        addToCategory: {
+          category: {
+            typeId: "category",
+            id: "4d7d4f06-627d-43f9-a5ce-1533c8b7b5b6" // T-Shirts category ID
+          }
+        }
+      }
+    ]
+  ) {
+    id
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "18dd69ee-d404-4614-838e-96e128ee694b",
+    version: 7,
+    actions: [
+      {
+        changePrice: {
+          priceId: "7bd850e0-f62c-4860-871f-79711d67e475",
+          price: {
+            value: {
+              centPrecision: {
+                currencyCode: "EUR",
+                centAmount: 13000
+              }
+            }
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "18dd69ee-d404-4614-838e-96e128ee694b",
+    version: 8,
+    actions: [
+      {
+        addPrice: {
+          variantId: 1,
+          price: {
+            value: {
+              centPrecision: {
+                currencyCode: "USD",
+                centAmount: 15000
+              }
+            }
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createInventoryEntry(
+    draft: {
+      sku: "superstar-001"
+      quantityOnStock: 200
+    }
+  ) {
+    sku
+    quantityOnStock
+  }
+}
+
+mutation {
+  updateDiscountCode(
+    id: "123"
+    version: $version
+    actions: [
+      {setName: {name: {locale: "en-US", value: "10% off"}}}
+      {changeIsActive: {isActive: false}}
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "1c9976ba-8c79-43db-81f0-c1af86a89811"
+    version: $version
+    actions: [
+      {setDescription: {description: [
+        {locale: "$locale",
+        value: "$VALUE"
+        }
+      ]}}
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "dd05fe88-1e90-48fe-aea2-18dc8d22c508"
+    version: 3
+    actions: [
+      {
+        addPrice: {
+          variantId: 1,
+          price: {
+            value: {
+              centPrecision: {
+                currencyCode: "EUR",
+                centAmount: $centAmount
+              }
+            }
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "2d26fc9d-e498-422e-9fa2-66d01b4d4905",
+    version: 8,
+    actions: [
+      {
+        addToCategory: {
+          category: {
+            typeId: "category",
+            id: "4bf7d1c4-0288-48d7-8fe5-400993a0c05d"
+          }
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createProduct(
+    draft: {
+      name: { locale: "en-US", value: "Adidas Gift Card" }
+      productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8a4f7ec462" }
+      slug: { locale: "en-US", value: "adidas-gift-card" }
+      description: { locale: "en-US", value: "This is an Adidas gift card worth $50." }
+      masterVariant: {
+        sku: "gift-card-001"
+        prices: [
           {
             value: {
               centPrecision: {
@@ -36,14 +370,175 @@ Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8
             }
           }
         ]
-- Here is the structure for attributes in product creation as example: attributes: [
+      }
+      categories: [{ typeId: "category", id: "cad22b7c-ef37-4b5b-9ae7-6c4b9d95d304" }]
+      publish: true
+    }
+  ) {
+    id
+    version
+    masterData {
+      current {
+        name(locale: "en-US")
+        slug(locale: "en-US")
+        masterVariant {
+          sku
+          prices {
+            value {
+              centAmount
+              currencyCode
+            }
+          }
+          attributesRaw {
+            name
+            value
+          }
+        }
+        categories {
+          id
+          name(locale: "en-US")
+        }
+      }
+    }
+  }
+}
+
+mutation {
+  updateProduct(
+    id: "dd05fe88-1e90-48fe-aea2-18dc8d22c508"
+    version: 9
+    actions: [
+      {
+        changeName: {
+          name: [
+            { locale: "zh-CN", value: "阿玛利亚地毯" }
+          ]
+        }
+      }
+    ]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createProduct(
+    draft: {
+      name: {locale: "en-US", value: "XX"}
+      slug: {locale: "en-US", value: "XX"}
+      productType: {typeId: "product-type", id: "XX"}
+      masterVariant: {
+        sku: "adilette-2024",
+        attributes: [
+          {name: "size", value: "\"S\""}
+        ],
+        prices: [
           {
-            name: "color",
-            value: "\"Gray\""
+            value: {centPrecision: {currencyCode: "USD", centAmount: 3500}}
           }
         ]
+      }
+      categories: [
+        {typeId: "category", id: "XX"}
+      ]
+      publish: true
+    }
+  ) {
+    id
+  }
+}
 
-- To publish a product: mutation {
+mutation {
+  createProductDiscount(
+    draft: {
+      name: { locale: "en-US", value: "10% off Stylish Jacket" }
+      value: { relative: { permyriad: 1000 } }
+      predicate: "product.id = \"97f9f80f-fcd0-495f-96c2-08074287a1f4\""
+      isActive: true
+      sortOrder: "0.1"
+    }
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createProductDiscount(
+    draft: {
+      name: { locale: "en-US", value: "10% off Product" }
+      value: { relative: { permyriad: 1000 } }
+      predicate: "product.id = \"6dcbec7d-404e-448c-8042-c3822e31c0b3\""
+      isActive: true
+      sortOrder: "0.2"
+    }
+  ) {
+    id
+    version
+  }
+}
+
+
+mutation {
+  createCartDiscount(
+    draft: {
+      name: { locale: "en-US", value: "15% off Adidas Ultraboost X 2025" }
+      value: { relative: { permyriad: 1500 } }
+      cartPredicate: "1=1"
+      target: { lineItems: { predicate: "product.id = \"01f7fba9-127c-4bdf-b092-a379dafcf75e\"" } }
+      isActive: true
+      requiresDiscountCode: true
+      sortOrder: "0.1"
+    }
+  ) {
+    id
+    version
+  }
+}
+
+
+mutation {
+  updateCart(
+    id: "8445f1a2-abd1-470b-a7fe-163847be5648",
+    version: 1,
+    actions: [
+      {
+        addLineItem: {
+          sku: "ultraboost-x-2025",
+          quantity: 1
+        }
+      }
+    ]
+  ) {
+    id
+    version
+    lineItems {
+      id
+      productId
+      name(locale: "en-US")
+      quantity
+    }
+  }
+}
+
+
+mutation {
+  createOrderFromCart(
+    draft: {
+      id: "8445f1a2-abd1-470b-a7fe-163847be5648",
+      version: 3
+    }
+  ) {
+    id
+    version
+    orderNumber
+    customerId
+  }
+}
+
+
+mutation {
   updateProduct(
     id: "c317f602-36c6-4c3e-a6d5-d9f09aac3802",
     version: 1,
@@ -56,11 +551,19 @@ Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8
     id
   }
 }
-- Add image:
-addExternalImage: {
+
+
+
+mutation {
+  updateProduct(
+    id: "c317f602-36c6-4c3e-a6d5-d9f09aac3802",
+    version: 6,
+    actions: [
+      {
+        addExternalImage: {
           variantId: 1,
           image: {
-            url: "https://cane-line.us/cdn/shop/files/SCALE_2.10_20145.png",
+            url: "https://cane-line.us/cdn/shop/files/SCALE_2.10_20145.png?v=1706874343",
             label: "Modern Sofa",
             dimensions: {
               width: 1280,
@@ -68,8 +571,26 @@ addExternalImage: {
             }
           }
         }
+      }
+    ]
+  ) {
+    id
+    version
+    masterData {
+      current {
+        masterVariant {
+          images {
+            url
+          }
+        }
+      }
+    }
+  }
+}
 
-updateProduct(
+
+mutation {
+  updateProduct(
     id: "e5dd6a99-f866-4d23-adf3-5ef908038b04",
     version: 1,
     actions: [
@@ -77,36 +598,29 @@ updateProduct(
       { setDescription: { description: { locale: "es-ES", value: "Un sillón cómodo y elegante, perfecto para cualquier sala de estar." } } },
       { changeSlug: { slug: { locale: "es-ES", value: "sillon-contemporaneo" } } }
     ]
-  )
-
-createProductType Rules and example:
-- name and description fields should be simple strings, not localized objects, during the product type creation.
--  attribute type dateTime. The correct type should be datetime.
-- Use different aliases if you are creating more than one type
-
-mutation {
-  bakeryProductType: createProductType(
-    draft: {
-      name: "Bakery & Desserts"
-      description: "Products like cakes, pastries, and desserts."
-      key: "bakery-desserts-product-type"
-    }
   ) {
     id
     version
   }
-  
-  coffeeProductType: createProductType(
+}
+
+createProductType Rules and example:
+- name and description fields should be simple strings, not localized objects, during the product type creation.
+-  attribute type dateTime. The correct type should be datetime.
+
+mutation {
+  createProductType(
     draft: {
-      name: "Coffee"
-      description: "Different types of coffee products."
-      key: "coffee-product-type"
+      name: "Computer"
+      description: "Product type for various computer hardware components."
+      key: "computer-product-type"
     }
   ) {
     id
     version
   }
 }
+
 
 updateProductType Rules and example:
 - Attribute names can only contain alphanumeric characters, underscores, and hyphens. 
@@ -148,17 +662,46 @@ mutation {
   }
 }
 
-The schema.sql is for reference to create proper GraphQL queries; users do not need to know about it.
-
-When possible execute a single mutation with multiple actions
-
-GraphQL Notes:
-- To set inventory for variants, the variant must have a SKU. If not, confirm with the user if one should be generated.
-- Use creating or updating inventory entries for setting inventory, not setInventoryQuantity.
 
 
-IMPORTANT: Take your time, try to understand the task, create a plan, show that plan to the human and then start the execution.
+mutation {
+  createProductType
+  al
+    draft: {
+      name: "Bakery & Desserts"
+      description: "Products like cakes, pastries, and desserts."
+      key: "bakery-desserts-product-type"
+    }
+  ) {
+    id
+    version
+  }
+  
+  createProductType(
+    draft: {
+      name: "Coffee"
+      description: "Different types of coffee products."
+      key: "coffee-product-type"
+    }
+  ) {
+    id
+    version
+  }
+}
 
-By default (unless directly specified) always use current and master variant. Example: { products { results { id version masterData { current { masterVariant { id prices { id value { centAmount currencyCode } } } } } } } }
 
-When you make changes on product, ask the user if they want to publish the changes. Bc those changes won't be "online" till they have the status as published.
+mutation {
+  createChannel(
+    draft: {
+      key: "new-channel-key4",
+      roles: [ProductDistribution],
+      name: { locale: "en-US", value: "New Channel Name" },
+      
+    }
+  ) {
+    id
+    version
+    key
+    name(locale: "en-US")
+  }
+}

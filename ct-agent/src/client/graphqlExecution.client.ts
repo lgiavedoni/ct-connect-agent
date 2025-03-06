@@ -29,13 +29,13 @@ class CommercetoolsGraphQLClient {
     }
 
     // Log authentication request details
-    logger.info('Authenticating with commercetools', {
-      authUrl: this.config.authUrl,
-      clientId: this.config.clientId,
-      projectKey: this.config.projectKey,
-      scope: formattedScope,
-      requestBody: `grant_type=client_credentials&scope=${encodeURIComponent(formattedScope)}`
-    });
+    // logger.info('Authenticating with commercetools', {
+    //   authUrl: this.config.authUrl,
+    //   clientId: this.config.clientId,
+    //   projectKey: this.config.projectKey,
+    //   scope: formattedScope,
+    //   requestBody: `grant_type=client_credentials&scope=${encodeURIComponent(formattedScope)}`
+    // });
 
     const response = await fetch(`${this.config.authUrl}/oauth/token`, {
       method: 'POST',

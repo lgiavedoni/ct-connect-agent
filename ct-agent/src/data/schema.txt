@@ -1,0 +1,186 @@
+"A customer is a person purchasing products. Carts, Orders and Reviews can be associated to a customer."
+type Customer implements Versioned & ReferenceExpandable {
+  customerNumber: String
+  email: String!
+  addresses: [Address!]!
+  defaultShippingAddressId: String
+  defaultBillingAddressId: String
+  shippingAddressIds: [String!]!
+  billingAddressIds: [String!]!
+  isEmailVerified: Boolean!
+  customerGroupRef: Reference
+  externalId: String
+  key: String
+  authenticationMode: AuthenticationMode
+  firstName: String
+  lastName: String
+  middleName: String
+  title: String
+  locale: Locale
+  salutation: String
+  dateOfBirth: Date
+  companyName: String
+  vatId: String
+  password: String
+  customerGroup: CustomerGroup
+  defaultShippingAddress: Address
+  defaultBillingAddress: Address
+  shippingAddresses: [Address!]!
+  billingAddresses: [Address!]!
+  storesRef: [KeyReference!]!
+  stores: [Store!]!
+  custom: CustomFieldsType
+  id: String!
+  version: Long!
+  createdAt: DateTime!
+  lastModifiedAt: DateTime!
+  createdBy: Initiator
+  lastModifiedBy: Initiator
+}
+
+
+type Order implements Versioned & ReferenceExpandable {
+  customerId: String
+  customer: Customer
+  customerEmail: String
+  anonymousId: String
+  lineItems(
+    "Queries with specified ID"
+    id: String): [LineItem!]!
+  customLineItems: [CustomLineItem!]!
+  totalPrice: Money!
+  taxedPrice: TaxedPrice
+  discountOnTotalPrice: DiscountOnTotalPrice
+  shippingAddress: Address
+  billingAddress: Address
+  inventoryMode: InventoryMode!
+  taxMode: TaxMode!
+  taxRoundingMode: RoundingMode!
+  taxCalculationMode: TaxCalculationMode!
+  customerGroup: CustomerGroup
+  customerGroupRef: Reference
+  country: Country
+  shippingKey: String
+  shippingInfo: ShippingInfo
+  discountCodes: [DiscountCodeInfo!]!
+  directDiscounts: [DirectDiscount!]!
+  discountTypeCombination: DiscountTypeCombination
+  refusedGifts: [CartDiscount!]!
+  refusedGiftsRefs: [Reference!]!
+  paymentInfo: PaymentInfo
+  locale: Locale
+  shippingRateInput: ShippingRateInput
+  origin: CartOrigin!
+  storeRef: KeyReference
+  store: Store
+  itemShippingAddresses: [Address!]!
+  businessUnit: BusinessUnit
+  businessUnitRef: KeyReference
+  shipping: [Shipping!]!
+  taxedShippingPrice: TaxedPrice
+  shippingMode: ShippingMode!
+  shippingCustomFields: CustomFieldsType
+  completedAt: DateTime
+  orderNumber: String
+  orderState: OrderState!
+  stateRef: Reference
+  state: State
+  shipmentState: ShipmentState
+  paymentState: PaymentState
+  syncInfo: [SyncInfo!]!
+  returnInfo: [ReturnInfo!]!
+  purchaseOrderNumber: String
+  lastMessageSequenceNumber: Long! @deprecated(reason: "An internal field that should not be used in customer logic")
+  cartRef: Reference
+  cart: Cart
+  quoteRef: Reference
+  quote: Quote
+  custom: CustomFieldsType
+  id: String!
+  version: Long!
+  createdAt: DateTime!
+  lastModifiedAt: DateTime!
+  createdBy: Initiator
+  lastModifiedBy: Initiator
+}
+
+
+"With discount codes it is possible to give specific cart discounts to an eligible amount of users. They are defined by a string value which can be added to a cart so that specific cart discounts can be applied to the cart."
+type DiscountCode implements Versioned & ReferenceExpandable {
+  code: String!
+  key: String
+  isActive: Boolean!
+  maxApplications: Long
+  maxApplicationsPerCustomer: Long
+  cartPredicate: String
+  applicationVersion: Long
+  validFrom: DateTime
+  validUntil: DateTime
+  groups: [String!]!
+  name(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  description(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  cartDiscounts: [CartDiscount!]!
+  referenceRefs: [Reference!]!
+  nameAllLocales: [LocalizedString!]
+  descriptionAllLocales: [LocalizedString!]
+  custom: CustomFieldsType
+
+  "How many times this discount code was applied (only applications that were part of a successful checkout are considered)"
+  applicationCount: Long!
+  cartDiscountRefs: [Reference!]!
+  id: String!
+  version: Long!
+  createdAt: DateTime!
+  lastModifiedAt: DateTime!
+  createdBy: Initiator
+  lastModifiedBy: Initiator
+}
+
+
+"\nCart discounts are recalculated every time LineItems or CustomLineItems are added or removed from the Cart or an order is created from the cart.\n\nThe number of active cart discounts that do not require a discount code (isActive=true and requiresDiscountCode=false) is limited to 100.\n      "
+type CartDiscount implements Versioned & ReferenceExpandable {
+  cartPredicate: String!
+  validFrom: DateTime
+  validUntil: DateTime
+  stackingMode: StackingMode!
+  isActive: Boolean!
+  requiresDiscountCode: Boolean!
+  sortOrder: String!
+  key: String
+  name(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  description(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  nameAllLocales: [LocalizedString!]!
+  descriptionAllLocales: [LocalizedString!]
+  referenceRefs: [Reference!]!
+  custom: CustomFieldsType
+  storesRef: [KeyReference!]!
+  stores: [Store!]!
+  value: CartDiscountValue!
+  target: CartDiscountTarget
+  id: String!
+  version: Long!
+  createdAt: DateTime!
+  lastModifiedAt: DateTime!
+  createdBy: Initiator
+  lastModifiedBy: Initiator
+}

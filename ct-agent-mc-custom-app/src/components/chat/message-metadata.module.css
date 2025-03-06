@@ -1,0 +1,158 @@
+.metadataContainer {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.tagsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-xs);
+}
+
+.entityTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.customTag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Entity tag colors */
+.tagProducts {
+  background-color: #1a73e8;
+  color: white;
+}
+
+.tagOrders {
+  background-color: #4285f4;
+  color: white;
+}
+
+.tagCustomers {
+  background-color: #673ab7;
+  color: white;
+}
+
+.tagCarts {
+  background-color: #ff9800;
+  color: white;
+}
+
+.tagCategories {
+  background-color: #0f9d58;
+  color: white;
+}
+
+/* Query tag colors */
+.tagRead {
+  background-color: #4285f4;
+  color: white;
+}
+
+.tagWrite {
+  background-color: #ea4335;
+  color: white;
+}
+
+.tagDefault {
+  background-color: #9e9e9e;
+  color: white;
+}
+
+.queriesContainer {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-s);
+}
+
+.queriesPanel {
+  margin-top: var(--spacing-xs);
+  margin-bottom: var(--spacing-s);
+  border: 1px solid var(--color-neutral);
+  border-radius: var(--border-radius-6);
+  padding: var(--spacing-m);
+  background-color: var(--color-surface);
+}
+
+.queriesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-s);
+}
+
+.queryTypeTags {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.queryItem {
+  margin-bottom: var(--spacing-m);
+}
+
+.queryItem:last-child {
+  margin-bottom: 0;
+}
+
+.codeBlock {
+  background-color: var(--color-neutral-95);
+  border-radius: var(--border-radius-4);
+  padding: var(--spacing-s);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: monospace;
+  margin: 0;
+}
+
+.graphqlLogoContainer {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+
+.graphqlLogoContainer:hover {
+  transform: scale(1.1);
+}
+
+.graphqlLogo {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.3s ease;
+}
+
+.graphqlLogoActive {
+  transform: rotate(180deg);
+}
+
+.queryCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e10098;
+  color: white;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: bold;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+} 

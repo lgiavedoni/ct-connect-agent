@@ -1,20 +1,69 @@
 import { logger } from '../utils/logger.utils';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { aiRunPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
+import { aiRunPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
+import { FileUtils } from '../utils/file.utils';
 
 const graphql_schema = `
   https://github.com/commercetools/commercetools-api-reference/blob/main/api-specs/graphql/schema.sdl
 `;
 
+// Load grounding files content
+let groundingContent_1, groundingContent_2, groundingContent_schema = '';
+
+
+try {
+  groundingContent_1 = FileUtils.loadFileContent('src/data/general_grounding.txt');
+  logger.info('Successfully loaded general_grounding.txt');
+} catch (error) {
+  logger.error('Failed to load general_grounding.txt', error);
+}
+
+try {
+  groundingContent_2 = FileUtils.loadFileContent('src/data/intro_grounding.txt');
+  logger.info('Successfully loaded intro_grounding.txt');
+} catch (error) {
+  logger.error('Failed to load intro_grounding.txt', error);
+}
+
+try {
+  groundingContent_schema = FileUtils.loadFileContent('src/data/schema.txt');
+  logger.info('Successfully loaded schema.txt');
+} catch (error) {
+  logger.error('Failed to load schema.txt', error);
+}
+
+
 const systemPrompt = `
-You are a GraphQL query expert that will be given a natural language request and will need to convert it into a valid GraphQL query.
-All your queries will be executed agains the commercetools platform. So make sure to use the correct fields and types.
+            You are a GraphQL query expert that will be given a natural language request and will need to convert it into a valid GraphQL query.
+            All your queries will be executed agains the commercetools platform. So make sure to use the correct fields and types.
+            If the request can't be solved in a single query, you can split it into multiple queries. Or AT LEAST return the main one and provide feedback to the user.
+            If there is absolutely no way to generate one (or many) valid query, return an empty string as the query and provide feedback to the user. But ALWAYS try your best to generate a query.
 
-Return ONLY the GraphQL query without any explanations or markdown formatting.
+            Return ONLY the GraphQL query without any explanations or markdown formatting.
+            Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
 
-Use the following schema as a reference:
-${graphql_schema}
+            If you have previous queries that have failed, take them into account to generate a new query. Never repeat the same mistakes.
+
+            Use the following schema as a reference:
+            ${graphql_schema}
+
+            By default (unless directly specified) always use current and master variant. Example: { products { results { id version masterData { current { masterVariant { id prices { id value { centAmount currencyCode } } } } } } } }
+            When you make changes on product, ask the user if they want to publish the changes. Bc those changes won't be "online" till they have the status as published.
+            
+            Use the following grounding to help you:
+            ${groundingContent_1}
+            
+            ${groundingContent_2}
+
+            And additional grounding for the schema:
+            ${groundingContent_schema}
+
+            Always return the following JSON structure:
+            {
+              "query": "<generated_query>", # Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
+              "feedback": "<feedback_to_user>" # Here you can provide feedback to the user about the query or follow up queries or ideas on how to complete the request.
+            }
 `;
 
 /**
@@ -48,22 +97,31 @@ const cleanGraphQLQuery = (queryString: string): string => {
 export const generateGraphQLQuery = createNamedTool(
   'generateGraphQLQuery',
   tool({
-    description: 'This tool MUST be used FIRST to generate a valid GraphQL query based on a natural language request. It has access to the commercetools platform schema. After generating a query with this tool, you should then execute it using the executeGraphQLQuery tool.',
+    description: `Tool used to generate a valid GraphQL query based on a natural language request. 
+                  This tool can do queries and mutations.
+                  It has access to the commercetools platform schema. 
+                  After generating a query with this tool, you should then execute it using the executeGraphQLQuery tool.
+                  This tool ONLY returns the generated query, don't ask for any type of operation, only converts the request into a valid GraphQL query.
+                  
+                  `,
     parameters: z.object({
-      request: z.string().describe('The natural language request to convert to a GraphQL query'),
-      previous_queries: z.array(z.string()).optional().describe('The previous queries that have been executed and failed (include the error message in the query). This is important to know so that you can generate a query that will return the correct data.')
+      request: z.string().describe('The natural language request of the data that you need. this will be converted to a GraphQL query, so dont ask for any type of operation, only the data'),
+      failed_previous_queries: z.array(z.string()).describe('ALL the previous queries that have been executed and failed (include the error message in the query). Send an empty array if there are no previous queries.')
     }),
-    execute: async ({ request, previous_queries = [] }) => {
-      logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${previous_queries.length}]`);
+    execute: async ({ request, failed_previous_queries = [] }) => {
+      logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${failed_previous_queries.length}]`);//, \n Previous queries: ${failed_previous_queries}
 
-      if (previous_queries.length > 0) {
-        const previous_queries_string = previous_queries.join('\n');
+      if (failed_previous_queries.length > 0) {
+        const previous_queries_string = failed_previous_queries.join('\n');
         // logger.info(`Previous queries: ${previous_queries_string}`);
         request = `${request}\n\n. 
-                  IMPORTANT, take into account the previous queries that have failed:\n${previous_queries_string}`;
+                  IMPORTANT, take into account the previous queries that have failed and avoid the same mistakes:\n${previous_queries_string}`;
       }
 
-      const generatedQuery = await aiRunPrompt(request, systemPrompt, undefined, model_openai_o3_mini);
+
+      
+
+      const generatedQuery = await aiRunPrompt(request, systemPrompt, undefined, model_flash);//model_openai_gpt_4_o
       
       // Clean the generated query
       const cleanedQuery = cleanGraphQLQuery(generatedQuery);

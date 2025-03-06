@@ -22,14 +22,14 @@ const config = {
   },
   icon: '${path:@commercetools-frontend/assets/application-icons/rocket.svg}',
   mainMenuLink: {
-    defaultLabel: 'Template starter',
+    defaultLabel: 'AI Agent',
     labelAllLocales: [],
     permissions: [PERMISSIONS.View],
   },
   submenuLinks: [
     {
-      uriPath: 'channels',
-      defaultLabel: 'Channels',
+      uriPath: 'chat',
+      defaultLabel: 'Chat',
       labelAllLocales: [],
       permissions: [PERMISSIONS.View],
     },

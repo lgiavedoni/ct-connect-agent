@@ -31,9 +31,14 @@
   margin-right: var(--spacing-m);
 }
 
-.messageItem {
+.messageWrapper {
   margin-bottom: var(--spacing-m);
   max-width: 80%;
+  display: flex;
+  flex-direction: column;
+}
+
+.messageItem {
   padding: var(--spacing-s);
   border-radius: var(--border-radius-6);
   word-wrap: break-word;

@@ -7,6 +7,7 @@ import Text from '@commercetools-uikit/text';
 import TextField from '@commercetools-uikit/text-field';
 import PrimaryButton from '@commercetools-uikit/primary-button';
 import { useChatConnector } from '../../hooks/use-chat-connector';
+import MessageMetadata from './message-metadata';
 import messages from './messages';
 import styles from './chat.module.css';
 
@@ -34,10 +35,17 @@ const MessageItem = ({ message }) => {
   }
   
   return (
-    <div className={messageClassName}>
-      <Text.Body tone={isSystemMessage ? 'critical' : isUserMessage ? 'inherit' : 'inherit'}>
-        {message.content}
-      </Text.Body>
+    <div className={styles.messageWrapper}>
+      <div className={messageClassName}>
+        <Text.Body tone={isSystemMessage ? 'critical' : isUserMessage ? 'inherit' : 'inherit'}>
+          {message.content}
+        </Text.Body>
+      </div>
+      
+      {/* Only show metadata for AI messages */}
+      {message.sender === 'ai' && message.metadata && (
+        <MessageMetadata metadata={message.metadata} />
+      )}
     </div>
   );
 };
@@ -48,6 +56,10 @@ MessageItem.propTypes = {
     content: PropTypes.string.isRequired,
     timestamp: PropTypes.string.isRequired,
     sender: PropTypes.oneOf(['user', 'ai', 'system']).isRequired,
+    metadata: PropTypes.shape({
+      graphql_queries: PropTypes.array,
+      entities: PropTypes.array,
+    }),
   }).isRequired,
 };
 
@@ -116,6 +128,7 @@ const Chat = () => {
                   placeholder={intl.formatMessage(messages.inputPlaceholder)}
                   horizontalConstraint="scale"
                   isDisabled={isLoading}
+                  onKeyDown={handleKeyPress}
                 />
               </div>
               <PrimaryButton
