@@ -27,6 +27,13 @@ deployAs:
   #         description: commercetools Composable Commerce client scope
   #         required: true
 
+  - name: ct-agent-mc-custom-app
+    applicationType: merchant-center-custom-application
+    configuration:
+      standardConfiguration:
+        - key: REACT_APP_AI_AGENT_API_URL
+          description: The URL of the AI Agent API
+          required: true
 
   - name: ct-agent 
     applicationType: service
@@ -46,15 +53,6 @@ deployAs:
         - key: OPENAI_API_KEY
           description: OpenAI API key
           required: true
-
-  - name: ct-agent-mc-custom-app
-    applicationType: merchant-center-custom-application
-    configuration:
-      standardConfiguration:
-        - key: REACT_APP_AI_AGENT_API_URL
-          description: The URL of the AI Agent API
-          required: true
-        
 
   # - name: job
   #   applicationType: job
@@ -129,4 +127,3 @@ inheritAs:
       - manage_orders
       - manage_payments
       - manage_stores
-      
