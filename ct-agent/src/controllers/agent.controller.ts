@@ -46,6 +46,8 @@ const systemPrompt: string = `
       When there is an error with the GraphQL query, you will need to fix it by using the generateGraphQLQuery tool again and providing the error message.
       
       *** Critical, if you are going to update/delete/create an entity (basically any mutation) , you first have to ask user for confirmation providing useful information about the entity. And ALWAYS provide the entity's id and also include the hashtag (#CONFIRMATION_NEEDED) in the message.***
+
+      ALLWAYS return a valid JSON object following the return_format below.
     </rules>
     <context>
       Today is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -53,7 +55,8 @@ const systemPrompt: string = `
 
 
     <return_format>
-      ALLWAYS Return a valid JSON in the following format (do NOT include anything else before or after the JSON object):
+      *****ALLWAYS Return a JSON object.*****
+      The JSON should be in the following format (do NOT include anything else before or after the JSON object):
         {
           "answer": "The answer to the user's request. Give him the answer, not how you got it.
                     The user is a human, so your response should be in a natural language and easy to understand.

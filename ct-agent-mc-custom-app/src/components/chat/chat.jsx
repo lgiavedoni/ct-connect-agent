@@ -138,6 +138,21 @@ const parseMarkdown = (text) => {
   return result;
 };
 
+// Move formatMessageContent outside of MessageItem component so it can be used by both components
+const formatMessageContent = (content) => {
+  if (!content) return '';
+  
+  // Parse markdown and render as HTML
+  const parsedMarkdown = parseMarkdown(content);
+  
+  return (
+    <div 
+      className={styles.markdownContent}
+      dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
+    />
+  );
+};
+
 const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   const isUserMessage = message.sender === 'user';
   const isSystemMessage = message.sender === 'system';
@@ -155,21 +170,6 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   const isConfirmationMessage = !isUserMessage && 
     message.content.includes('#CONFIRMATION_NEEDED');
   
-  // Function to format message content with markdown support
-  const formatMessageContent = (content) => {
-    if (!content) return '';
-    
-    // Parse markdown and render as HTML
-    const parsedMarkdown = parseMarkdown(content);
-    
-    return (
-      <div 
-        className={styles.markdownContent}
-        dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
-      />
-    );
-  };
-
   const handleConfirmation = (confirmed) => {
     if (isMounted.current) {
       setConfirmationResponse(confirmed);

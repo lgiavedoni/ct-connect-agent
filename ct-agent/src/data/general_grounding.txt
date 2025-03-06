@@ -705,3 +705,83 @@ mutation {
     name(locale: "en-US")
   }
 }
+
+
+
+//Query to get availability for products
+
+query {
+  products {
+    results {
+      id
+      masterData {
+        current {
+          name(locale: "en-US")
+          masterVariant {
+            sku
+            
+            availability {
+              noChannel{
+                availableQuantity
+              }
+              channels {
+                results {
+                  channel {
+                    id
+                    key
+                    name(locale: "en-US")
+                  }
+                  availability {
+                    id,
+                    availableQuantity
+                  }
+                }
+              }
+            }
+          }
+          variants {
+            sku
+            
+            availability {
+              noChannel{
+                availableQuantity
+              }
+              channels {
+                results {
+                  channel {
+                    id
+                    key
+                    name(locale: "en-US")
+                  }
+                  availability {
+                    id,
+                    availableQuantity
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+mutation {
+  updateInventoryEntry(
+    id: "037eb82c-54c0-49d1-9e73-c19d5dee66e6",
+    version: 1,
+    actions: [
+      {
+        changeQuantity: {
+          quantity: 4
+        }
+      }
+    ]
+  ) {
+    id
+    version
+    quantityOnStock
+  }
+}

@@ -184,3 +184,76 @@ type CartDiscount implements Versioned & ReferenceExpandable {
   createdBy: Initiator
   lastModifiedBy: Initiator
 }
+
+type ProductVariantAvailabilityWithChannels {
+  noChannel: ProductVariantAvailability
+  channels(
+    """
+    The IDs of channels to include.
+
+    If neither `includeChannelIds` nor `excludeChannelIds` are provided, then all channels are returned.
+    """
+    includeChannelIds: [String!],
+
+    """
+    The IDs of channels to exclude.
+
+    If neither `includeChannelIds` nor `excludeChannelIds` are provided, then all channels are returned.
+    """
+    excludeChannelIds: [String!], limit: Int, offset: Int): ProductVariantAvailabilitiesResult!
+}
+
+
+type Channel implements Versioned & ReviewTarget & ReferenceExpandable {
+  id: String!
+  version: Long!
+  key: String!
+  roles: [ChannelRole!]!
+  name(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  nameAllLocales: [LocalizedString!]
+  description(
+    "String is defined for different locales. This argument specifies the desired locale."
+    locale: Locale,
+
+    "List of languages the client is able to understand, and which locale variant is preferred."
+    acceptLanguage: [Locale!]): String
+  descriptionAllLocales: [LocalizedString!]
+  address: Address
+  geoLocation: Geometry
+  createdAt: DateTime!
+  lastModifiedAt: DateTime!
+  reviewRatingStatistics: ReviewRatingStatistics
+  custom: CustomFieldsType
+  createdBy: Initiator
+  lastModifiedBy: Initiator
+}
+
+input ChannelDraft {
+  key: String!
+  roles: [ChannelRole!]!
+  name: [LocalizedStringItemInputType!]
+  description: [LocalizedStringItemInputType!]
+  custom: CustomFieldsDraft
+  address: AddressInput
+  geoLocation: GeometryInput
+}
+
+input ChannelUpdateAction {
+  addRoles: AddChannelRoles
+  changeDescription: ChangeChannelDescription
+  changeKey: ChangeChannelKey
+  changeName: ChangeChannelName
+  removeRoles: RemoveChannelRoles
+  setAddress: SetChannelAddress
+  setAddressCustomField: SetChannelAddressCustomField
+  setAddressCustomType: SetChannelAddressCustomType
+  setCustomField: SetChannelCustomField
+  setCustomType: SetChannelCustomType
+  setGeoLocation: SetChannelGeoLocation
+  setRoles: SetChannelRoles
+}
