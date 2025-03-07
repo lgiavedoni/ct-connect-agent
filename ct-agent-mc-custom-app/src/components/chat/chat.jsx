@@ -76,7 +76,7 @@ const parseMarkdown = (text) => {
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
     .replace(/^# (.*$)/gim, '<h1>$1</h1>')
     
-    // Bold and italic
+    // Bold and italic - process these before line breaks to prevent unwanted breaks
     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.*?)\*/g, '<em>$1</em>')
     .replace(/__(.*?)__/g, '<strong>$1</strong>')
@@ -92,50 +92,29 @@ const parseMarkdown = (text) => {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     
     // Blockquotes
-    .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
-    
-    // Preserve line breaks
-    .replace(/\n/g, '<br/>');
+    .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
 
   // Handle paragraphs - wrap content in p tags if it's not already in a tag
-  const tagRegex = /<([a-z][a-z0-9]*)\b[^>]*>(.*?)<\/\1>/gis;
-  let result = '';
-  let lastIndex = 0;
+  // Split by double newlines to create paragraphs
+  const paragraphs = formattedText.split(/\n\n+/);
+  let processedText = '';
   
-  // Find all HTML tags
-  const matches = [...formattedText.matchAll(tagRegex)];
-  
-  if (matches.length > 0) {
-    matches.forEach(match => {
-      const [fullMatch] = match;
-      const startIndex = match.index;
+  paragraphs.forEach(paragraph => {
+    if (paragraph.trim()) {
+      // Replace single newlines with spaces within paragraphs
+      // This prevents unwanted line breaks within paragraphs
+      const processedParagraph = paragraph.replace(/\n/g, ' ');
       
-      // If there's text before this tag, wrap it in a paragraph
-      if (startIndex > lastIndex) {
-        const textBefore = formattedText.substring(lastIndex, startIndex).trim();
-        if (textBefore) {
-          result += `<p>${textBefore}</p>`;
-        }
-      }
-      
-      // Add the tag
-      result += fullMatch;
-      lastIndex = startIndex + fullMatch.length;
-    });
-    
-    // Add any remaining text
-    if (lastIndex < formattedText.length) {
-      const remainingText = formattedText.substring(lastIndex).trim();
-      if (remainingText) {
-        result += `<p>${remainingText}</p>`;
+      // Check if the paragraph is already wrapped in HTML tags
+      if (!/^<(\w+)[^>]*>.*<\/\1>$/s.test(processedParagraph)) {
+        processedText += `<p>${processedParagraph}</p>`;
+      } else {
+        processedText += processedParagraph;
       }
     }
-  } else {
-    // No tags found, wrap everything in a paragraph
-    result = `<p>${formattedText}</p>`;
-  }
+  });
 
-  return result;
+  return processedText;
 };
 
 // Move formatMessageContent outside of MessageItem component so it can be used by both components
@@ -194,9 +173,15 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   return (
     <div className={`${styles.messageWrapper} ${styles[message.sender]}`}>
       <div className={`${styles.messageItem} ${styles[message.sender]} ${isConfirmationMessage ? styles.confirmation : ''}`}>
-        <Text.Body tone={isUserMessage ? 'inverted' : 'inherit'}>
-          {formatMessageContent(message.content)}
-        </Text.Body>
+        {isUserMessage ? (
+          <Text.Body tone="inverted">
+            {formatMessageContent(message.content)}
+          </Text.Body>
+        ) : (
+          <Text.Body>
+            {formatMessageContent(message.content)}
+          </Text.Body>
+        )}
         
         {isConfirmationMessage && confirmationResponse === null && (
           <div className={styles.confirmationButtons}>
@@ -298,6 +283,13 @@ const WelcomeScreen = ({ onStartChat }) => {
   const intl = useIntl();
   const [inputValue, setInputValue] = useState('');
   const textAreaRef = useRef(null);
+  
+  // Focus the textarea when component mounts
+  useEffect(() => {
+    if (textAreaRef.current) {
+      textAreaRef.current.focus();
+    }
+  }, []);
   
   const handleStartChat = () => {
     if (inputValue.trim()) {

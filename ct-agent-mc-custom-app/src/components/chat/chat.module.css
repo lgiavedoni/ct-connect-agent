@@ -13,10 +13,11 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
   background-color: var(--color-surface);
-  padding: var(--spacing-xl);
+  padding: var(--spacing-m);
+  overflow: hidden;
 }
 
 .welcomeContent {
@@ -25,27 +26,27 @@
   text-align: center;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-l);
 }
 
 .welcomeTitle {
   font-size: 2.5rem;
   font-weight: 600;
   color: var(--color-primary);
-  margin-bottom: var(--spacing-m);
+  margin-bottom: var(--spacing-s);
 }
 
 .welcomeSubtitle {
   font-size: 1rem;
   color: var(--color-neutral-60);
-  margin-bottom: var(--spacing-l);
+  margin-bottom: var(--spacing-m);
   max-width: 600px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .welcomeInputContainer {
-  margin-top: var(--spacing-l);
+  margin-top: var(--spacing-m);
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -55,6 +56,39 @@
 .welcomeInputField {
   width: 100%;
   position: relative;
+}
+
+.welcomeInputField .sendButton {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  background-color: var(--color-primary-40, #8F8FFF);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 1;
+}
+
+.welcomeInputField .sendButton:hover {
+  background-color: var(--color-primary, #5252FF);
+}
+
+.welcomeInputField .sendIcon {
+  width: 20px;
+  height: 20px;
+  color: white;
+  transition: transform 0.2s ease;
+}
+
+.welcomeInputField .sendButton:hover .sendIcon {
+  transform: translateY(-2px);
 }
 
 /* Custom TextArea Styles */
@@ -113,7 +147,7 @@
   padding: var(--spacing-m) var(--spacing-xl);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-l);
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
@@ -152,10 +186,11 @@
 .messageWrapper.ai {
   margin-left: 0;
   margin-right: auto;
+  max-width: 100%;
 }
 
 .messageItem {
-  padding: var(--spacing-m);
+  padding: var(--spacing-m) var(--spacing-l);
   word-wrap: break-word;
   font-size: 1rem;
   line-height: 1.5;
@@ -164,13 +199,16 @@
 }
 
 .messageItem.user {
-  background-color: var(--color-primary);
+  background-color: var(--color-primary-40, #8F8FFF);
   color: white;
+  border-radius: 16px;
 }
 
 .messageItem.ai {
-  background-color: var(--color-neutral-95);
+  background-color: transparent;
   color: var(--color-neutral-20);
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .messageItem.error {
@@ -211,7 +249,6 @@
   bottom: 0;
   width: 100%;
   background-color: var(--color-surface);
-  border-top: 1px solid var(--color-neutral-90);
   padding: var(--spacing-m) var(--spacing-xl);
 }
 
@@ -238,7 +275,7 @@
   height: 36px;
   padding: 0;
   border: none;
-  background: none;
+  background-color: var(--color-primary-40, #8F8FFF);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -249,7 +286,7 @@
 }
 
 .sendButton:hover {
-  background-color: var(--color-neutral-95);
+  background-color: var(--color-primary, #5252FF);
 }
 
 .sendButton:disabled {
@@ -258,9 +295,14 @@
 }
 
 .sendIcon {
-  width: 24px;
-  height: 24px;
-  color: var(--color-primary);
+  width: 20px;
+  height: 20px;
+  color: white;
+  transition: transform 0.2s ease;
+}
+
+.sendButton:hover .sendIcon {
+  transform: translateY(-2px);
 }
 
 /* Loading Indicator */
