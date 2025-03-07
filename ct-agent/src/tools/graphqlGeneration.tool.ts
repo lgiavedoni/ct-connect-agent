@@ -46,6 +46,8 @@ const systemPrompt = `
 
             As much as possible try to always include the id and the name or any readible identifier for the object so the system and the user can identify the object. Follow your schema to know when this is possible.
 
+            sortOrder: Every time that you have to define a sortOrder, use at least 3 decimals and create a VERY RANDOM number. Example: 1.234
+
             Use the following schema as a reference:
             ${graphql_schema}
 
