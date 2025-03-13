@@ -7,6 +7,9 @@ const config = {
   name: 'Ct Agent Mc Custom App',
   entryPointUriPath: '${env:ENTRY_POINT_URI_PATH}',
   cloudIdentifier: '${env:CLOUD_IDENTIFIER}',
+  additionalEnv: {
+    AI_AGENT_API_URL: '${env:REACT_APP_AI_AGENT_API_URL}',
+  },
   env: {
     development: {
       initialProjectKey: 'luciano-test',
