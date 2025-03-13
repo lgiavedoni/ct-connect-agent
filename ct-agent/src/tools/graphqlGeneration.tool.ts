@@ -46,7 +46,7 @@ const systemPrompt = `
 
             As much as possible try to always include the id and the name or any readible identifier for the object so the system and the user can identify the object. Follow your schema to know when this is possible.
 
-            sortOrder: Every time that you have to define a sortOrder, use at least 3 decimals and create a VERY RANDOM number. Example: 1.234
+            sortOrder: Every time that you have to define a sortOrder, use at least 3 decimals, the user will provide a random number to use as sortOrder. Example: 0.724
 
             Use the following schema as a reference:
             ${graphql_schema}
@@ -121,7 +121,8 @@ export const generateGraphQLQuery = createNamedTool(
         const previous_queries_string = failed_previous_queries.join('\n');
         // logger.info(`Previous queries: ${previous_queries_string}`);
         request = `${request}\n\n. 
-                  IMPORTANT, take into account the previous queries that have failed and avoid the same mistakes:\n${previous_queries_string}`;
+                  IMPORTANT, take into account the previous queries that have failed and avoid the same mistakes:\n${previous_queries_string}
+                  And if you need a random sortOrder use ${Math.random().toFixed(3)}`;
       }
 
 
