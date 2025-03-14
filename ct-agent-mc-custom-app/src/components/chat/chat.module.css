@@ -335,35 +335,40 @@
   40% { transform: scale(1.0); }
 }
 
+/* Inline typing indicator */
+.inlineTypingIndicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.inlineTypingIndicator .typingDots {
+  margin-top: 4px;
+}
+
+.inlineTypingIndicator .dot {
+  width: 3px;
+  height: 3px;
+  background-color: var(--color-primary-30);
+}
+
 /* Markdown Content */
 .markdownContent {
   width: 100%;
   overflow-wrap: break-word;
+  word-break: break-word;
 }
 
-.markdownContent p {
-  margin: 0 0 var(--spacing-s) 0;
-  line-height: 1.5;
-}
-
-.markdownContent p:last-child {
-  margin-bottom: 0;
-}
-
-.markdownContent br {
-  display: block;
-  content: "";
-  margin-top: 0.5em;
-}
-
-.markdownContent h1, 
-.markdownContent h2, 
-.markdownContent h3, 
-.markdownContent h4, 
-.markdownContent h5, 
+.markdownContent h1,
+.markdownContent h2,
+.markdownContent h3,
+.markdownContent h4,
+.markdownContent h5,
 .markdownContent h6 {
-  margin-top: var(--spacing-m);
-  margin-bottom: var(--spacing-s);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   font-weight: 600;
 }
 
@@ -379,75 +384,54 @@
   font-size: 1.2rem;
 }
 
-.markdownContent h4, .markdownContent h5, .markdownContent h6 {
-  font-size: 1.1rem;
+.markdownContent p {
+  margin-bottom: 0.75rem;
 }
 
 .markdownContent ul, .markdownContent ol {
-  margin: var(--spacing-s) 0;
-  padding-left: var(--spacing-l);
-  list-style-position: outside;
+  margin-left: 1.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .markdownContent li {
-  margin-bottom: var(--spacing-xs);
-  padding-left: var(--spacing-xs);
-}
-
-.markdownContent li p {
-  margin: 0;
-  display: inline;
+  margin-bottom: 0.25rem;
 }
 
 .markdownContent code {
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: 2px 4px;
-  border-radius: 4px;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
   font-family: monospace;
-  font-size: 0.9em;
 }
 
 .markdownContent pre {
-  background-color: rgba(0, 0, 0, 0.1);
-  padding: var(--spacing-s);
-  border-radius: 6px;
+  background-color: rgba(0, 0, 0, 0.05);
+  padding: 0.5rem;
+  border-radius: 4px;
   overflow-x: auto;
-  margin: var(--spacing-s) 0;
+  margin-bottom: 0.75rem;
 }
 
 .markdownContent pre code {
   background-color: transparent;
   padding: 0;
-  border-radius: 0;
-  display: block;
 }
 
 .markdownContent blockquote {
-  border-left: 4px solid rgba(0, 0, 0, 0.2);
-  padding-left: var(--spacing-s);
-  margin: var(--spacing-s) 0;
-  color: rgba(0, 0, 0, 0.7);
+  border-left: 3px solid #ccc;
+  padding-left: 0.75rem;
+  color: #666;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .markdownContent a {
-  color: var(--color-primary);
+  color: #2475b9;
   text-decoration: underline;
 }
 
-.markdownContent table {
-  border-collapse: collapse;
-  margin: var(--spacing-s) 0;
-  width: 100%;
-}
-
-.markdownContent th, .markdownContent td {
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  padding: var(--spacing-xs) var(--spacing-s);
-  text-align: left;
-}
-
-.markdownContent th {
-  background-color: rgba(0, 0, 0, 0.05);
+.plainTextContent {
+  white-space: pre-wrap;
 }
 
 /* Adjust styles for user messages with markdown */

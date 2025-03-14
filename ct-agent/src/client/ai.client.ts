@@ -1,9 +1,10 @@
 import { google } from '@ai-sdk/google';
-import { generateText, Tool, Message } from 'ai';
+import { generateText, Tool, Message, streamText } from 'ai';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { anthropic } from '@ai-sdk/anthropic';
 import { openai } from '@ai-sdk/openai';
 import { logger } from '../utils/logger.utils';
+import { Response } from 'express';
 
 const googleAI = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
@@ -75,6 +76,75 @@ export const aiRunPrompt = async (
   return text;
 }
 
+
+export const aiRunPromptStream = async (
+  system_prompt: string,
+  messages: Message[],
+  tools?: Tool[] | Record<string, Tool>,
+  model = model_flash,
+  responseStream?: Response | ((chunk: string) => void)
+) => {
+
+  // Convert tools array to object if it's an array
+  const toolsObject = Array.isArray(tools) 
+    ? tools.reduce((acc: Record<string, Tool>, tool: any) => {
+        // Use the toolName property if available, otherwise fallback to index
+        const toolName = tool.toolName || `tool_${Object.keys(acc).length}`;
+        return { ...acc, [toolName]: tool };
+      }, {})
+    : tools;
+
+  // Use unshift to add the system message at the beginning of the array
+  messages.unshift({
+    role: 'system',
+    content: system_prompt,
+    id: 'system',
+  });
+
+  try {
+    const result = await streamText({
+      model,
+      messages: messages,
+      maxSteps: 15,
+      tools: toolsObject,
+      providerOptions: {
+        // openai: { model: 'o3-mini', reasoningEffort: 'medium' },
+      },
+    });
+    
+    let fullText = '';
+    
+    for await (const textPart of result.textStream) {
+      // Append to the full text
+      fullText += textPart;
+      
+      // If a response stream or callback is provided, use it
+      if (responseStream) {
+        if (typeof responseStream === 'function') {
+          responseStream(textPart);
+        } else if ('write' in responseStream) {
+          responseStream.write(textPart);
+        }
+      } else {
+        // Fallback to stdout if no response stream is provided
+        process.stdout.write(textPart);
+      }
+    }
+
+    // Return both the result and the full text
+    return { ...result, fullText };
+  } catch (error) {
+    logger.error(`Error in aiRunPromptStream: ${error instanceof Error ? error.message : String(error)}`);
+    
+    // If there's an error and we have a response stream, try to notify
+    if (responseStream && typeof responseStream === 'function') {
+      responseStream(`\nError in AI processing: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    // Re-throw the error to be handled by the caller
+    throw error;
+  }
+}
 
 
 /**

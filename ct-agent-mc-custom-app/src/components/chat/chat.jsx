@@ -118,18 +118,22 @@ const parseMarkdown = (text) => {
 };
 
 // Move formatMessageContent outside of MessageItem component so it can be used by both components
-const formatMessageContent = (content) => {
+const formatMessageContent = (content, shouldParseMarkdown) => {
   if (!content) return '';
   
-  // Parse markdown and render as HTML
-  const parsedMarkdown = parseMarkdown(content);
+  // Parse markdown and render as HTML only if shouldParseMarkdown is true
+  if (shouldParseMarkdown) {
+    const parsedMarkdown = parseMarkdown(content);
+    return (
+      <div 
+        className={styles.markdownContent}
+        dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
+      />
+    );
+  }
   
-  return (
-    <div 
-      className={styles.markdownContent}
-      dangerouslySetInnerHTML={{ __html: parsedMarkdown }}
-    />
-  );
+  // Otherwise, just return the plain text
+  return <div className={styles.plainTextContent}>{content}</div>;
 };
 
 const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
@@ -148,6 +152,10 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   // Check if this is a confirmation message
   const isConfirmationMessage = !isUserMessage && 
     message.content.includes('#CONFIRMATION_NEEDED');
+    
+  // Check if markdown formatting should be applied (default to true for AI messages, false for user)
+  const shouldRenderMarkdown = message.isMarkdown === true || 
+    (!isUserMessage && message.isMarkdown !== false);
   
   const handleConfirmation = (confirmed) => {
     if (isMounted.current) {
@@ -163,7 +171,7 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
       <div className={styles.messageWrapper + ' ' + styles.error}>
         <div className={styles.messageItem + ' ' + styles.error}>
           <Text.Body tone="critical">
-            {formatMessageContent(message.content)}
+            {formatMessageContent(message.content, shouldRenderMarkdown)}
           </Text.Body>
         </div>
       </div>
@@ -175,12 +183,23 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
       <div className={`${styles.messageItem} ${styles[message.sender]} ${isConfirmationMessage ? styles.confirmation : ''}`}>
         {isUserMessage ? (
           <Text.Body tone="inverted">
-            {formatMessageContent(message.content)}
+            {formatMessageContent(message.content, shouldRenderMarkdown)}
           </Text.Body>
         ) : (
-          <Text.Body>
-            {formatMessageContent(message.content)}
-          </Text.Body>
+          <div>
+            <Text.Body>
+              {formatMessageContent(message.content, shouldRenderMarkdown)}
+            </Text.Body>
+            {message.isStreaming && (
+              <div className={styles.inlineTypingIndicator}>
+                <div className={styles.typingDots}>
+                  <div className={styles.dot}></div>
+                  <div className={styles.dot}></div>
+                  <div className={styles.dot}></div>
+                </div>
+              </div>
+            )}
+          </div>
         )}
         
         {isConfirmationMessage && confirmationResponse === null && (
@@ -209,7 +228,7 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
         )}
       </div>
       
-      {!isUserMessage && message.metadata && isLastInGroup && (
+      {!isUserMessage && message.metadata && isLastInGroup && !message.isStreaming && (
         <MessageMetadata metadata={message.metadata} />
       )}
     </div>
@@ -226,6 +245,7 @@ MessageItem.propTypes = {
       graphql_queries: PropTypes.array,
       entities: PropTypes.array,
     }),
+    isStreaming: PropTypes.bool,
   }).isRequired,
   isLastInGroup: PropTypes.bool.isRequired,
   onConfirmationResponse: PropTypes.func,
@@ -356,7 +376,7 @@ const Chat = () => {
   const [hasStartedChat, setHasStartedChat] = useState(false);
   const messagesEndRef = useRef(null);
   const textAreaRef = useRef(null);
-  const { messages: chatMessages, isLoading, error, sendMessage } = useChatConnector();
+  const { messages: chatMessages, isLoading, isStreaming, error, sendMessage } = useChatConnector();
   const [pendingConfirmations, setPendingConfirmations] = useState({});
   const isMounted = useRef(true);
 
@@ -367,12 +387,12 @@ const Chat = () => {
     };
   }, []);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change or during streaming
   useEffect(() => {
     if (messagesEndRef.current && isMounted.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatMessages]);
+  }, [chatMessages, isStreaming]);
   
   // Focus the textarea when loading completes
   useEffect(() => {
@@ -382,7 +402,7 @@ const Chat = () => {
   }, [isLoading, hasStartedChat]);
 
   const handleSendMessage = () => {
-    if (inputValue.trim() && !isLoading && isMounted.current) {
+    if (inputValue.trim() && !isLoading && !isStreaming && isMounted.current) {
       sendMessage(inputValue);
       setInputValue('');
       // Focus will be handled by the effect when loading completes
@@ -437,13 +457,11 @@ const Chat = () => {
             />
           ))}
           
-          {isLoading && <LoadingIndicator />}
-          
           {error && !chatMessages.some(msg => msg.sender === 'system') && (
             <div className={styles.messageWrapper + ' ' + styles.error}>
               <div className={styles.messageItem + ' ' + styles.error}>
                 <Text.Body tone="critical">
-                  {formatMessageContent(intl.formatMessage(messages.errorMessage))}
+                  {formatMessageContent(intl.formatMessage(messages.errorMessage), true)}
                 </Text.Body>
               </div>
             </div>
@@ -467,12 +485,12 @@ const Chat = () => {
                 onChange={(event) => setInputValue(event.target.value)}
                 placeholder="Ask me anything about your products, orders, customers, or any other commercetools data."
                 onKeyDown={handleKeyPress}
-                disabled={isLoading}
+                disabled={isLoading || isStreaming}
               />
               <button
                 type="submit"
                 className={styles.sendButton}
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!inputValue.trim() || isLoading || isStreaming}
                 aria-label="Send message"
               >
                 <AngleUpIcon className={styles.sendIcon} />
