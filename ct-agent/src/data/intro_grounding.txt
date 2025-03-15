@@ -150,4 +150,64 @@ mutation {
   }
 }
 
+query {
+  orders(where: "customerId = \"b67d9a91-273a-48f4-8c94-9b66ae1e1693\"" ) {
+    results {
+      id
+      totalPrice {
+        centAmount
+        currencyCode
+      }
+    }
+  }
+}
 
+* Example on how to create a 10% off for a customer in his next order (two steps)
+
+mutation {
+  createCartDiscount(
+    draft: {
+      name: { locale: "en-US", value: "10% off Cart Total" }
+      value: { relative: { permyriad: 1000 } }
+      cartPredicate: "1=1"
+      target: { totalPrice: {} }
+      isActive: true
+      requiresDiscountCode: true
+      sortOrder: "0.725"
+    }
+  ) {
+    id
+    version
+  }
+}
+
+
+Return ID: e6d4fa74-b41a-4533-9f07-a69d89dc5433
+
+
+mutation CreateDiscountCodeForCustomer {
+  createDiscountCode(
+    draft: {
+      code: "JOHN-DOE-10-PERCENT-OFF"
+      name: { locale: "en-US", value: "10% off for John Doe" }
+      description: { locale: "en-US", value: "One-time use 10% discount for customer John Doe" }
+      cartPredicate: "customer.id = \"b67d9a91-273a-48f4-8c94-9b66ae1e1693\""
+      cartDiscounts: [{ id: "e6d4fa74-b41a-4533-9f07-a69d89dc5433" }]
+      isActive: true
+      maxApplications: 1
+      maxApplicationsPerCustomer: 1
+    }
+  ) {
+    id
+    version
+    code
+    name(locale: "en-US")
+    description(locale: "en-US")
+    cartDiscounts {
+      id
+    }
+    isActive
+    maxApplications
+    maxApplicationsPerCustomer
+  }
+}

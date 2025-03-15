@@ -98,6 +98,15 @@ const cleanGraphQLQuery = (queryString: string): string => {
   return cleaned;
 };
 
+// Function to generate random sortOrder that doesn't end with 0
+const generateRandomSortOrder = (): string => {
+  let randomNum;
+  do {
+    randomNum = Math.random().toFixed(3);
+  } while (randomNum.endsWith('0'));
+  return randomNum;
+};
+
 // Define the tool in the format expected by the AI SDK and assign a name
 export const generateGraphQLQuery = createNamedTool(
   'generateGraphQLQuery',
@@ -117,16 +126,15 @@ export const generateGraphQLQuery = createNamedTool(
     execute: async ({ request, failed_previous_queries = [] }) => {
       logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${failed_previous_queries.length}]`);//, \n Previous queries: ${failed_previous_queries}
 
+      request = `${request}\n\n When you need a random sortOrder use one of the following: ${generateRandomSortOrder()}, ${generateRandomSortOrder()}, ${generateRandomSortOrder()}`;
+
       if (failed_previous_queries.length > 0) {
         const previous_queries_string = failed_previous_queries.join('\n');
         // logger.info(`Previous queries: ${previous_queries_string}`);
         request = `${request}\n\n. 
                   IMPORTANT, take into account the previous queries that have failed and avoid the same mistakes:\n${previous_queries_string}
-                  And if you need a random sortOrder use ${Math.random().toFixed(3)}`;
+                  `;
       }
-
-
-      
 
       const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_flash);//model_openai_gpt_4_o
       

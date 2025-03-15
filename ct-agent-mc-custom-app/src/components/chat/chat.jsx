@@ -140,6 +140,7 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   const isUserMessage = message.sender === 'user';
   const isSystemMessage = message.sender === 'system';
   const [confirmationResponse, setConfirmationResponse] = useState(null);
+  const [confirmationTimestamp, setConfirmationTimestamp] = useState(null);
   const isMounted = useRef(true);
   
   // Cleanup on unmount
@@ -159,11 +160,21 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
   
   const handleConfirmation = (confirmed) => {
     if (isMounted.current) {
+      const timestamp = new Date().toISOString();
       setConfirmationResponse(confirmed);
+      setConfirmationTimestamp(timestamp);
       if (onConfirmationResponse) {
         onConfirmationResponse(message.id, confirmed);
       }
+      console.log(`Confirmation response: ${confirmed ? 'Confirmed' : 'Cancelled'} at ${timestamp}`);
     }
+  };
+  
+  // Format timestamp for display
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
   
   if (isSystemMessage) {
@@ -204,8 +215,8 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
         
         {isConfirmationMessage && confirmationResponse === null && (
           <div className={styles.confirmationButtons}>
-            <Spacings.Stack scale="s">
-              <Spacings.Inline scale="s" justifyContent="flex-end">
+            <Spacings.Stack scale="m">
+              <Spacings.Inline scale="m" justifyContent="flex-start">
                 <SecondaryButton
                   label="No"
                   onClick={() => handleConfirmation(false)}
@@ -220,11 +231,16 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
         )}
         
         {isConfirmationMessage && confirmationResponse !== null && (
-          <div className={styles.confirmationResponse}>
-            <Text.Body tone={confirmationResponse ? 'positive' : 'critical'}>
-              {confirmationResponse ? 'Confirmed' : 'Cancelled'}
-            </Text.Body>
-          </div>
+          <>
+            <div className={styles.confirmationResponse}>
+              <Text.Body tone={confirmationResponse ? 'positive' : 'critical'}>
+                {confirmationResponse ? 'Confirmed' : 'Cancelled'}
+              </Text.Body>
+            </div>
+            <div className={styles.confirmationLog}>
+              Action {confirmationResponse ? 'confirmed' : 'cancelled'} at {formatTimestamp(confirmationTimestamp)}
+            </div>
+          </>
         )}
       </div>
       
@@ -426,9 +442,19 @@ const Chat = () => {
   
   const handleConfirmationResponse = (messageId, confirmed) => {
     if (isMounted.current) {
+      // Log the confirmation action with timestamp and message ID
+      const timestamp = new Date().toISOString();
+      const logMessage = `[${timestamp}] User ${confirmed ? 'confirmed' : 'cancelled'} action for message ID: ${messageId}`;
+      console.log(logMessage);
+      
+      // Store the confirmation response in state
       setPendingConfirmations(prev => ({
         ...prev,
-        [messageId]: confirmed
+        [messageId]: {
+          confirmed,
+          timestamp,
+          logMessage
+        }
       }));
       
       if (confirmed) {

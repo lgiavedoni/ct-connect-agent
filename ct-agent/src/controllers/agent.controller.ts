@@ -218,13 +218,26 @@ export const startAgentHandler = async (request: AgentRequest, response: Respons
       throw new CustomError(400, 'Bad request: messages array is required', undefined);
     }
     
-    logger.info(`Starting request processing for ${requestId} with ${messages.length} messages`);
+    // Validate and sanitize messages
+    const sanitizedMessages = messages.map(msg => {
+      // Check for single character content that might cause issues
+      if (typeof msg.content === 'string' && msg.content.length === 1 && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(msg.content)) {
+        logger.info(`Sanitizing single special character message: ${msg.content}`);
+        return {
+          ...msg,
+          content: `${msg.content} ` // Add a space to prevent issues
+        };
+      }
+      return msg;
+    });
+    
+    logger.info(`Starting request processing for ${requestId} with ${sanitizedMessages.length} messages`);
     
     // Initialize request in storage
     ResponseStorage.createRequest(requestId);
     
-    // Start processing in the background
-    processAgentRequest(requestId, messages)
+    // Start processing in the background with sanitized messages
+    processAgentRequest(requestId, sanitizedMessages)
       .catch(err => {
         logger.error(`Error processing request ${requestId}: ${err}`);
         ResponseStorage.addChunk(requestId, {
@@ -444,13 +457,26 @@ export const angetHandler = async (request: AgentRequest, response: Response): P
       logger.info(`Processing request, ${JSON.stringify(messages)}`);
     }
 
+    // Validate and sanitize messages
+    const sanitizedMessages = messages.map(msg => {
+      // Check for single character content that might cause issues
+      if (typeof msg.content === 'string' && msg.content.length === 1 && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(msg.content)) {
+        logger.info(`Sanitizing single special character message: ${msg.content}`);
+        return {
+          ...msg,
+          content: `${msg.content} ` // Add a space to prevent issues
+        };
+      }
+      return msg;
+    });
+
     // Set appropriate headers for streaming
     response.setHeader('Content-Type', 'application/x-ndjson'); // Line-delimited JSON
     response.setHeader('Connection', 'keep-alive');
     response.setHeader('Cache-Control', 'no-cache, no-transform');
     response.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx
     
-    logger.info(`Processing request with ${messages.length} messages`);
+    logger.info(`Processing request with ${sanitizedMessages.length} messages`);
     
     // Send initial message
     response.write(JSON.stringify({ type: 'start', status: 'started' }) + '\n');
@@ -499,7 +525,7 @@ export const angetHandler = async (request: AgentRequest, response: Response): P
     // Pass the streamHandler callback to aiRunPromptStream
     const aiResponse = await aiRunPromptStream(
       systemPrompt,
-      messages,
+      sanitizedMessages, // Use sanitized messages
       [generateGraphQLQuery, executeGraphQLQuery],
       model_openai_gpt_4_o,
       streamHandler

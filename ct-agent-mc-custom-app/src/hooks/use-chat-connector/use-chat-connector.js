@@ -4,6 +4,15 @@ import { actions } from '@commercetools-frontend/sdk';
 import { useAsyncDispatch } from '@commercetools-frontend/sdk';
 import { createMessageFromResponse } from '../../models/chat-response';
 
+// Helper function to sanitize message content
+const sanitizeMessageContent = (content) => {
+  // If content is just a single special character, add a space
+  if (content.length === 1 && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(content)) {
+    return content + ' ';  // Add a space to prevent issues with single special characters
+  }
+  return content;
+};
+
 export const useChatConnector = () => {
   const { environment } = useApplicationContext();
   const AI_AGENT_API_URL = environment?.AI_AGENT_API_URL;
@@ -66,20 +75,52 @@ export const useChatConnector = () => {
       lastChunkIdRef.current = -1;
       
       // Start the processing on the server but don't wait for complete response
-      await dispatch(
-        actions.forwardTo.post({
-          uri: AI_AGENT_API_URL,
-          payload: {
-            messages: chatHistory,
-            requestId,
-          },
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'Accept-Version': 'v1',
-          }
-        })
-      );
+      try {
+        await dispatch(
+          actions.forwardTo.post({
+            uri: AI_AGENT_API_URL,
+            payload: {
+              messages: chatHistory,
+              requestId,
+            },
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+              'Accept-Version': 'v1',
+            }
+          })
+        );
+      } catch (startError) {
+        // Handle 502 errors specifically
+        console.error('Error starting request:', startError);
+        
+        if (startError.response?.status === 502 || 
+            (startError.message && startError.message.includes('502'))) {
+          
+          console.error('502 Bad Gateway error detected');
+          // Add an error message to the chat about the gateway error
+          setMessages(prevMessages => {
+            return prevMessages.map(msg => {
+              if (msg.id === streamingMessageId) {
+                return {
+                  ...msg,
+                  content: 'Sorry, I encountered a server connection issue (502 Bad Gateway). This can happen with certain inputs. Please try again with a different message.',
+                  isStreaming: false,
+                  isMarkdown: true,
+                };
+              }
+              return msg;
+            });
+          });
+          
+          setIsStreaming(false);
+          setIsLoading(false);
+          return; // Stop further processing
+        }
+        
+        // If it's not a 502 error, rethrow
+        throw startError;
+      }
       
       // Start polling for updates
       const pollForChunks = async () => {
@@ -255,7 +296,39 @@ export const useChatConnector = () => {
           return streamResponse;
         } catch (error) {
           console.error('Error polling for chunks:', error);
-          // We'll try again on the next interval
+          
+          // Handle specific 502 errors during polling
+          if (error.response?.status === 502 || 
+              (error.message && error.message.includes('502'))) {
+            
+            console.error('502 Bad Gateway error detected during polling');
+            
+            // Stop polling on gateway errors
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
+            
+            // Update the message with an error
+            setMessages(prevMessages => {
+              return prevMessages.map(msg => {
+                if (msg.id === streamingMessageId && !msg.content) {
+                  return {
+                    ...msg,
+                    content: 'Sorry, I encountered a server connection issue (502 Bad Gateway). Please try again with a different message.',
+                    isStreaming: false,
+                    isMarkdown: true,
+                  };
+                }
+                return msg;
+              });
+            });
+            
+            setIsStreaming(false);
+            setIsLoading(false);
+          }
+          
+          // We'll try again on the next interval if polling is still active
           return null;
         }
       };
@@ -280,10 +353,13 @@ export const useChatConnector = () => {
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
+    // Sanitize the message content
+    const sanitizedMessage = sanitizeMessageContent(messageText.trim());
+    
     // Add user message to the chat
     const userMessage = {
       id: `user-${Date.now()}`,
-      content: messageText,
+      content: messageText, // Keep the original message for display
       timestamp: new Date().toISOString(),
       sender: 'user',
       metadata: {
@@ -303,7 +379,7 @@ export const useChatConnector = () => {
       const chatHistory = messages.map(msg => ({
         id: msg.id,
         createdAt: new Date(msg.timestamp),
-        content: msg.content,
+        content: msg.sender === 'user' ? sanitizeMessageContent(msg.content) : msg.content,
         role: msg.sender === 'user' ? 'user' : msg.sender === 'ai' ? 'assistant' : 'system'
       }));
       
@@ -311,7 +387,7 @@ export const useChatConnector = () => {
       chatHistory.push({
         id: userMessage.id,
         createdAt: new Date(userMessage.timestamp),
-        content: userMessage.content,
+        content: sanitizedMessage, // Use sanitized content for the API
         role: 'user'
       });
 

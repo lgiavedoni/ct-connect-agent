@@ -211,6 +211,20 @@
   padding-right: 0;
 }
 
+.messageItem.ai .markdownContent {
+  text-align: left;
+}
+
+.messageItem.ai .markdownContent p {
+  padding-left: 0;
+  margin-left: 0;
+}
+
+.messageItem.ai .markdownContent ul {
+  padding-left: 1.2rem;
+  margin-left: 0;
+}
+
 .messageItem.error {
   background-color: var(--color-neutral-98);
   color: var(--color-error);
@@ -226,21 +240,50 @@
 
 /* Confirmation Message Styles */
 .messageItem.confirmation {
-  background-color: #FFF8E1;
+  background-color: transparent;
   color: #5D4037;
-  border: 1px solid #FFE082;
+  border: 2px solid #FFE082;
+  border-radius: 8px;
+  margin-bottom: var(--spacing-m);
+  padding: var(--spacing-m);
+  text-align: left;
+}
+
+.messageItem.confirmation > div {
+  text-align: left;
 }
 
 .confirmationButtons {
   margin-top: var(--spacing-m);
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  padding: 0;
+}
+
+.confirmationButtons button:first-child {
+  margin-left: 0;
+}
+
+.confirmationButtons button {
+  margin-right: var(--spacing-m);
+  margin-left: 0;
 }
 
 .confirmationResponse {
-  margin-top: var(--spacing-s);
+  margin-top: var(--spacing-m);
   font-weight: 500;
-  text-align: right;
+  text-align: left;
+  padding: 0;
+  border-top: 1px solid var(--color-neutral-90);
+  padding-top: var(--spacing-s);
+}
+
+.confirmationLog {
+  margin-top: var(--spacing-s);
+  font-size: 0.85rem;
+  color: var(--color-neutral-60);
+  padding: var(--spacing-s) 0;
+  text-align: left;
 }
 
 /* Input Container */
@@ -359,6 +402,7 @@
   width: 100%;
   overflow-wrap: break-word;
   word-break: break-word;
+  text-align: left;
 }
 
 .markdownContent h1,
@@ -370,6 +414,7 @@
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
   font-weight: 600;
+  text-align: left;
 }
 
 .markdownContent h1 {
@@ -386,11 +431,16 @@
 
 .markdownContent p {
   margin-bottom: 0.75rem;
+  text-align: left;
+  padding-left: 0;
+  margin-left: 0;
 }
 
 .markdownContent ul, .markdownContent ol {
-  margin-left: 1.5rem;
+  margin-left: 0;
+  padding-left: 1.2rem;
   margin-bottom: 0.75rem;
+  text-align: left;
 }
 
 .markdownContent li {
