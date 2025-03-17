@@ -785,3 +785,20 @@ mutation {
     quantityOnStock
   }
 }
+
+
+* Example query
+query {
+  products(
+    where: "masterData(current(name(en-US = \"Brazilian Santos Coffee\")) or current(name(en-US = \"Ethiopian Yirgacheffe Coffee\")) or current(name(en-US = \"Premium Colombian Coffee\")))"
+  ) {
+    results {
+      id
+      masterData {
+        current {
+          name(locale: "en-US")
+        }
+      }
+    }
+  }
+}
