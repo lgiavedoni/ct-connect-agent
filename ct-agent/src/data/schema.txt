@@ -257,3 +257,20 @@ input ChannelUpdateAction {
   setGeoLocation: SetChannelGeoLocation
   setRoles: SetChannelRoles
 }
+
+
+input DiscountCodeDraft {
+  code: String!
+  name: [LocalizedStringItemInputType!]
+  key: String
+  description: [LocalizedStringItemInputType!]
+  cartDiscounts: [ResourceIdentifierInput!]!
+  isActive: Boolean = true
+  maxApplications: Long
+  maxApplicationsPerCustomer: Long
+  cartPredicate: String
+  custom: CustomFieldsDraft
+  validFrom: DateTime
+  validUntil: DateTime
+  groups: [String!] = []
+}

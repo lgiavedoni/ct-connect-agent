@@ -359,15 +359,16 @@
 .typingDots {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dot {
-  width: 4px;
-  height: 4px;
+  width: 8px;
+  height: 8px;
   background-color: var(--color-primary);
   border-radius: 50%;
   animation: bounce 1.4s infinite ease-in-out;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
 }
 
 .dot:nth-child(1) { animation-delay: -0.32s; }
@@ -382,19 +383,21 @@
 .inlineTypingIndicator {
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
-  height: 16px;
+  margin-left: 8px;
+  height: 20px;
   vertical-align: middle;
 }
 
 .inlineTypingIndicator .typingDots {
   margin-top: 4px;
+  gap: 5px;
 }
 
 .inlineTypingIndicator .dot {
-  width: 3px;
-  height: 3px;
+  width: 6px;
+  height: 6px;
   background-color: var(--color-primary-30);
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.1);
 }
 
 /* Markdown Content */

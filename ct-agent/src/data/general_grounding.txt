@@ -802,3 +802,19 @@ query {
     }
   }
 }
+
+
+query OrdersByCustomerEmail {
+  orders(where: "customerEmail = \"jhoe@gmail.com\"") {
+    results {
+      id
+      orderNumber
+      totalPrice {
+        centAmount
+        currencyCode
+      }
+      orderState
+      customerEmail
+    }
+  }
+}

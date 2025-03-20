@@ -48,17 +48,24 @@
 }
 
 .toolTag {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 6px;
-  height: 16px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 500;
+  padding: 2px 8px;
+  margin-right: 6px;
+  border-radius: 4px;
+  font-size: 12px;
   color: white;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  font-weight: 500;
+}
+
+.toolTag > svg {
+  margin-left: 4px;
+  margin-right: 4px;
+}
+
+.errorTag {
+  font-weight: 600;
+  box-shadow: 0 0 4px rgba(183, 28, 28, 0.7);
 }
 
 .metadataToggleIcon {
@@ -183,8 +190,12 @@
 }
 
 .toolCardTitle {
-  flex: 1;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.toolCardTitle > svg {
+  margin-left: 6px;
 }
 
 .toolCardIcon {
@@ -316,4 +327,21 @@
 
 .queryItem:last-child {
   margin-bottom: 0;
+}
+
+.errorIndicator {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 6px;
+  background-color: #E53935;
+  color: white;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.errorIndicator svg {
+  margin-right: 4px;
 } 

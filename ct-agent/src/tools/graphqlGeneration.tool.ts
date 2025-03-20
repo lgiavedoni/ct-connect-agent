@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger.utils';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_flash_thinking, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
 import { FileUtils } from '../utils/file.utils';
 
 const graphql_schema = `
@@ -44,9 +44,16 @@ const systemPrompt = `
 
             If you have previous queries that have failed, take them into account to generate a new query. Never repeat the same mistakes.
 
+            If your previous queries have failed, try different approaches. Example, if you can't filter by a field, try to filter by a related field. (like ID and email for customers)
+
             As much as possible try to always include the id and the name or any readible identifier for the object so the system and the user can identify the object. Follow your schema to know when this is possible.
+            As much as possible try to always return information that can help the user identify the object and are human readable. Name, email, date, etc.
 
             sortOrder: Every time that you have to define a sortOrder, use at least 3 decimals, the user will provide a random number to use as sortOrder. Example: 0.724
+            Marketing considerations:
+            - When you need to set a name that will be shown to the user, use something that a marketing team would use.
+            - Example of a good name for DiscountCode.code: "SUMMER_SALE_2025"
+            
 
             Use the following schema as a reference:
             ${graphql_schema}
@@ -65,7 +72,7 @@ const systemPrompt = `
             <return_format>
               Always return the following JSON structure:
               {
-                "query": "<generated_query>", # Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. And be careful with the ". So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"". DO NOT add any additional \ or \\.
+                "query": "<generated_query>", # Be very mindful of not adding any formating that can mess the query. This string will be executed as is. Not \n. So date filter should be like this: "createdAt >= \"2025-02-01T00:00:00.000Z\"".
                 "feedback": "<feedback_to_user>" # Here you can provide feedback to the user about the query or follow up queries or ideas on how to complete the request.
               }
             </return_format>
@@ -120,13 +127,18 @@ export const generateGraphQLQuery = createNamedTool(
                   
                   `,
     parameters: z.object({
-      request: z.string().describe('The natural language request of the data that you need. this will be converted to a GraphQL query, so dont ask for any type of operation, only the data'),
+      request: z.string().describe('The natural language request that you want to convert to graphql'),
+      context: z.string().describe('Any additional context/data that will help this tool to create the query. Example: If you want to do something with a specific object, provide the object id.'),
       failed_previous_queries: z.array(z.string()).describe('ALL the previous queries that have been executed and failed (include the error message in the query). Send an empty array if there are no previous queries.')
     }),
-    execute: async ({ request, failed_previous_queries = [] }) => {
-      logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${failed_previous_queries.length}]`);//, \n Previous queries: ${failed_previous_queries}
+    execute: async ({ request, failed_previous_queries = [], context = '' }) => {
+      logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${failed_previous_queries.length}] and context: ${context}`);//, \n Previous queries: ${failed_previous_queries}
 
+      if (context) {
+        request = `${request}\n\n Additional context: ${context}`;
+      }
       request = `${request}\n\n When you need a random sortOrder use one of the following: ${generateRandomSortOrder()}, ${generateRandomSortOrder()}, ${generateRandomSortOrder()}`;
+
 
       if (failed_previous_queries.length > 0) {
         const previous_queries_string = failed_previous_queries.join('\n');
@@ -136,7 +148,7 @@ export const generateGraphQLQuery = createNamedTool(
                   `;
       }
 
-      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_flash);//model_openai_gpt_4_o
+      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_flash_thinking);//model_openai_gpt_4_o
       
       // Clean the generated query
       const cleanedQuery = cleanGraphQLQuery(generatedQuery);

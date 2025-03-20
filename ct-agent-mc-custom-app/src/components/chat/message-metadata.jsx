@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Collapsible from '@commercetools-uikit/collapsible';
-import { AngleUpIcon, AngleDownIcon } from '@commercetools-uikit/icons';
+import { AngleUpIcon, AngleDownIcon, ErrorIcon } from '@commercetools-uikit/icons';
 import { useIntl } from 'react-intl';
 import styles from './message-metadata.module.css';
 
@@ -27,14 +27,18 @@ const TOOL_COLORS = {
 };
 
 // Tool tag component
-const ToolTag = ({ toolName }) => {
+const ToolTag = ({ toolName, hasError }) => {
   const toolConfig = TOOL_COLORS[toolName] || TOOL_COLORS.default;
   
   return (
     <span 
-      className={styles.toolTag} 
-      style={{ backgroundColor: toolConfig.color }}
+      className={`${styles.toolTag} ${hasError ? styles.errorTag : ''}`}
+      style={{ 
+        backgroundColor: hasError ? '#E53935' : toolConfig.color,
+        borderLeft: hasError ? '4px solid #B71C1C' : 'none'
+      }}
     >
+      {hasError && <ErrorIcon size="small" color="#FFFFFF" />}
       {toolConfig.name}
     </span>
   );
@@ -42,6 +46,7 @@ const ToolTag = ({ toolName }) => {
 
 ToolTag.propTypes = {
   toolName: PropTypes.string.isRequired,
+  hasError: PropTypes.bool,
 };
 
 // Helper to get tool name from step, handling different possible structures
@@ -137,6 +142,85 @@ const getToolOutput = (step) => {
   return null;
 };
 
+// Helper to check if tool output has an error
+const hasToolError = (step) => {
+  const toolOutput = getToolOutput(step);
+  const toolName = getToolName(step);
+  
+  if (!toolOutput) return false;
+  
+  // Check if the output has error: true
+  if (typeof toolOutput === 'object' && toolOutput !== null) {
+    // Direct error field check
+    if (toolOutput.error === true) {
+      return true;
+    }
+    
+    // Special case for GraphQL queries
+    if (toolName === 'executeGraphQLQuery') {
+      // Check for error property
+      if (toolOutput.response?.error === true || 
+         (toolOutput.response?.errors && toolOutput.response.errors.length > 0)) {
+        return true;
+      }
+      
+      // Check for error message in response string
+      if (toolOutput.response?.response && typeof toolOutput.response.response === 'string') {
+        const responseStr = toolOutput.response.response;
+        if (responseStr.includes('"error": true') || 
+            responseStr.includes('GraphQL Error') || 
+            responseStr.includes('Error executing GraphQL query')) {
+          return true;
+        }
+      }
+    }
+    
+    // Check for nested error objects
+    if (toolOutput.response && toolOutput.response.error === true) {
+      return true;
+    }
+  }
+  
+  // For string outputs that might be JSON
+  if (typeof toolOutput === 'string') {
+    // Quick check for error indicators in the string
+    if (toolOutput.includes('"error": true') || 
+        toolOutput.includes('GraphQL Error') || 
+        toolOutput.includes('Error executing GraphQL query')) {
+      return true;
+    }
+    
+    try {
+      const parsedOutput = JSON.parse(toolOutput);
+      
+      // Check for direct error field
+      if (parsedOutput.error === true) {
+        return true;
+      }
+      
+      // Check for GraphQL errors
+      if (parsedOutput.response) {
+        if (parsedOutput.response.error === true || 
+           (parsedOutput.response.errors && parsedOutput.response.errors.length > 0)) {
+          return true;
+        }
+        
+        // Check for error message in response string
+        if (typeof parsedOutput.response === 'string' && 
+           (parsedOutput.response.includes('"error": true') || 
+            parsedOutput.response.includes('GraphQL Error') || 
+            parsedOutput.response.includes('Error executing GraphQL query'))) {
+          return true;
+        }
+      }
+    } catch (e) {
+      // Not valid JSON, so we already checked string directly
+    }
+  }
+  
+  return false;
+};
+
 const MessageMetadata = ({ steps, graphqlQuery }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // Add a state to track which timeline items are expanded
@@ -149,11 +233,20 @@ const MessageMetadata = ({ steps, graphqlQuery }) => {
   const stepsCount = steps?.length || 0;
   const toolsUsed = new Set();
   
+  // Track which tools have errors
+  const toolErrors = {};
+  
   if (steps?.length) {
     steps.forEach(step => {
       const toolName = getToolName(step);
       if (toolName) {
         toolsUsed.add(toolName);
+        
+        // Check if this tool execution had an error
+        const error = hasToolError(step);
+        if (error) {
+          toolErrors[toolName] = true;
+        }
       }
     });
   }
@@ -179,7 +272,11 @@ const MessageMetadata = ({ steps, graphqlQuery }) => {
       <div className={styles.metadataPreviewRight}>
         <div className={styles.toolTagsContainer}>
           {toolsList.map((tool) => (
-            <ToolTag key={tool} toolName={tool} />
+            <ToolTag 
+              key={tool} 
+              toolName={tool} 
+              hasError={toolErrors[tool]} 
+            />
           ))}
         </div>
         <div className={styles.metadataToggleIcon}>
@@ -206,6 +303,7 @@ const MessageMetadata = ({ steps, graphqlQuery }) => {
                   const toolName = getToolName(step);
                   const toolInput = getToolInput(step);
                   const toolOutput = getToolOutput(step);
+                  const hasError = hasToolError(step);
                   
                   // Skip steps without tool name
                   if (!toolName) return null;
@@ -232,6 +330,12 @@ const MessageMetadata = ({ steps, graphqlQuery }) => {
                           >
                             <div className={styles.toolCardTitle}>
                               <strong>{toolConfig.name}</strong>
+                              {hasError && (
+                                <span className={styles.errorIndicator}>
+                                  <ErrorIcon size="small" color="#FFFFFF" />
+                                  Error
+                                </span>
+                              )}
                             </div>
                             <div className={styles.toolCardIcon}>
                               {isItemExpanded ? 

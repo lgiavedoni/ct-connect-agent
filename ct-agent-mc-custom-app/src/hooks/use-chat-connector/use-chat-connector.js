@@ -13,6 +13,38 @@ const sanitizeMessageContent = (content) => {
   return content;
 };
 
+// Helper function to create a system message with execution context
+const createExecutionContextMessage = (lastAiMessage) => {
+  // If no message or no steps/data, return null
+  if (!lastAiMessage || 
+     !(lastAiMessage.metadata?.steps?.length > 0 || lastAiMessage.metadata?.stepsPromiseData)) {
+    return null;
+  }
+
+  console.log('Last AI Message:', lastAiMessage.metadata);
+  
+  let contextContent = "Here is all the information from your previous execution:\n\n";
+  
+  
+    // Format the comprehensive data to be more readable
+    contextContent += "## Execution Steps Data\n\n";
+    
+    for (const [index, step] of lastAiMessage.metadata.steps.entries()) {
+      contextContent += `### Step ${index + 1}\n`;
+      contextContent += `Tool Calls: ${JSON.stringify(step.toolCalls)}\n`;
+      contextContent += `Tool Results: ${JSON.stringify(step.toolResults)}\n`;
+    }
+  
+  // Create a system message with previous execution information
+  return {
+    id: `system-context-${Date.now()}`,
+    createdAt: new Date(),
+    content: contextContent,
+    role: 'assistant'
+  }
+  
+};
+
 export const useChatConnector = () => {
   const { environment } = useApplicationContext();
   const AI_AGENT_API_URL = environment?.AI_AGENT_API_URL;
@@ -183,19 +215,27 @@ export const useChatConnector = () => {
               
               console.log('Found full_ai_response with steps data');
               
-              // Debug logging for steps data structure
-              console.log('Debug - First step structure:', JSON.stringify(
-                fullAiResponseChunk.response.stepsPromise.status.value?.[0] || 'No first step'
-              ));
-              console.log('Debug - Steps array length:', 
-                fullAiResponseChunk.response.stepsPromise.status.value?.length || 0
-              );
+              // // Debug logging for steps data structure
+              // console.log('Debug - First step structure:', JSON.stringify(
+              //   fullAiResponseChunk.response.stepsPromise.status.value?.[0] || 'No first step'
+              // ));
+              // console.log('Debug - Steps array length:', 
+              //   fullAiResponseChunk.response.stepsPromise.status.value?.length || 0
+              // );
               
               const steps = fullAiResponseChunk.response.stepsPromise.status.value || [];
               const fullText = fullAiResponseChunk.response.fullText || 
                               (fullAiResponseChunk.response.textPromise?.status?.value) || '';
               
-              // Update the message with the final content and steps data
+              // Store the complete stepsPromise data for context in future interactions
+              const stepsPromiseData = {
+                steps: steps,
+                rawStepsPromise: fullAiResponseChunk.response.stepsPromise,
+                executionContext: fullAiResponseChunk.response.executionContext || {},
+                apiResponseData: fullAiResponseChunk.response.apiResponseData || {}
+              };
+              
+              // Update the message with the final content and comprehensive steps data
               setMessages(prevMessages => {
                 return prevMessages.map(msg => {
                   if (msg.id === streamingMessageId) {
@@ -205,7 +245,8 @@ export const useChatConnector = () => {
                       metadata: {
                         graphql_queries: [], // Legacy field, can be removed later
                         entities: [],        // Legacy field, can be removed later
-                        steps: steps,        // New field with steps data
+                        steps: steps,        
+                        stepsPromiseData: stepsPromiseData, // Store the complete data
                       },
                       isStreaming: false,
                       isMarkdown: true,
@@ -441,6 +482,17 @@ export const useChatConnector = () => {
         content: msg.sender === 'user' ? sanitizeMessageContent(msg.content) : msg.content,
         role: msg.sender === 'user' ? 'user' : msg.sender === 'ai' ? 'assistant' : 'system'
       }));
+      
+      // Extract the most recent AI message steps information if available
+      const lastAiMessage = [...messages].reverse().find(msg => msg.sender === 'ai' && 
+        (msg.metadata?.steps?.length > 0 || msg.metadata?.stepsPromiseData));
+      
+      // Create and add the system context message if we have previous execution data
+      const systemContextMessage = createExecutionContextMessage(lastAiMessage);
+      if (systemContextMessage) {
+        chatHistory.push(systemContextMessage);
+        console.log('Added system context message with previous execution information');
+      }
       
       // Add the new user message to the chat history
       chatHistory.push({

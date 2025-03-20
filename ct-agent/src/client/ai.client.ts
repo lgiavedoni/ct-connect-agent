@@ -65,7 +65,7 @@ export const aiRunPrompt = async (
   const { text } = await generateText({
     model,
     messages: messages,
-    maxSteps: 15,
+    maxSteps: 12,
     tools: toolsObject,
     providerOptions: {
 
@@ -105,7 +105,7 @@ export const aiRunPromptStream = async (
     const result = await streamText({
       model,
       messages: messages,
-      maxSteps: 15,
+      maxSteps: 12,
       tools: toolsObject,
       providerOptions: {
         // openai: { model: 'o3-mini', reasoningEffort: 'medium' },

@@ -151,13 +151,15 @@ mutation {
 }
 
 query {
-  orders(where: "customerId = \"b67d9a91-273a-48f4-8c94-9b66ae1e1693\"" ) {
+  orders(where: "customerId = \"b67d9a91-273a-48f4-8c94-9b66ae1e1693\" ") {
     results {
       id
       totalPrice {
         centAmount
         currencyCode
       }
+      customerEmail
+      createdAt
     }
   }
 }
@@ -211,3 +213,12 @@ mutation CreateDiscountCodeForCustomer {
     maxApplicationsPerCustomer
   }
 }
+
+
+Be sure to properly scape your " using \" when inside ""
+This is the correct example:
+        query {
+          orders(where: "customerId = \"b67d9a91-273a-48f4-8c94-9b66ae1e1693\"") {
+            total
+          }
+        }
