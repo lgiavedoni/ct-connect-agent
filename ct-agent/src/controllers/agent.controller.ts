@@ -403,29 +403,15 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
       logger.warn(`Failed to send full object to client: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-    // Try to parse the full response as JSON
-    try {
-      const jsonResponse = cleanJson(aiResponse.fullText);
-      
+   
       // Store the complete response
       ResponseStorage.addChunk(requestId, {
         type: 'complete',
-        response: jsonResponse,
+        response: {answer: aiResponse.fullText},
         // Also include the full text for immediate display
         text: aiResponse.fullText
       });
-      
-    } catch (error) {
-      // If parsing fails, store the original text
-      logger.warn(`Failed to parse AI response as JSON: ${error instanceof Error ? error.message : String(error)}`);
-      ResponseStorage.addChunk(requestId, {
-        type: 'complete',
-        response: { answer: aiResponse.fullText },
-        // Include the full text for immediate display
-        text: aiResponse.fullText
-      });
-    }
-  } catch (err: unknown) {
+   } catch (err: unknown) {
     logger.error(`Error in processAgentRequest for ${requestId}: ${err}`);
     ResponseStorage.addChunk(requestId, {
       type: 'error',
@@ -450,152 +436,159 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
  * @param response The Express response object
  */
 export const angetHandler = async (request: AgentRequest, response: Response): Promise<void> => {
-  try {
+  // try {
     const { messages, requestId } = request.body;
     
     // If a requestId is provided, use the new streaming approach
     if (requestId) {
       return startAgentHandler(request, response);
-    }
-    
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      logger.error('Missing or invalid messages array in request body.');
+    }else{
+      //TODO, I am not sure if this is the best way to handle this
       throw new CustomError(
-        400,
-        'Bad request: messages array is required in request body',
-        undefined
-      );
-    } else {
-      logger.info(`Processing request, ${JSON.stringify(messages)}`);
-    }
-
-    // Validate and sanitize messages
-    const sanitizedMessages = messages.map(msg => {
-      // Check for single character content that might cause issues
-      if (typeof msg.content === 'string' && msg.content.length === 1 && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(msg.content)) {
-        logger.info(`Sanitizing single special character message: ${msg.content}`);
-        return {
-          ...msg,
-          content: `${msg.content} ` // Add a space to prevent issues
-        };
-      }
-      return msg;
-    });
-
-    // Set appropriate headers for streaming
-    response.setHeader('Content-Type', 'application/x-ndjson'); // Line-delimited JSON
-    response.setHeader('Connection', 'keep-alive');
-    response.setHeader('Cache-Control', 'no-cache, no-transform');
-    response.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx
-    
-    logger.info(`Processing request with ${sanitizedMessages.length} messages`);
-    
-    // Send initial message
-    response.write(JSON.stringify({ type: 'start', status: 'started' }) + '\n');
-    
-    // Try to flush the response if the method exists
-    // Some Express configurations with compression middleware add this method
-    if (typeof (response as any).flush === 'function') {
-      (response as any).flush();
+              400,
+              'Bad request: requestId is required in request body',
+              undefined
+            );
     }
     
-    // Track when the last chunk was sent to avoid overwhelming the client
-    let lastChunkTime = Date.now();
-    const MIN_CHUNK_INTERVAL_MS = 50; // Minimum time between chunks
-    
-    // Create a callback function to handle streaming chunks
-    const streamHandler = (chunk: string) => {
-      // Ensure we don't send chunks too quickly
-      const now = Date.now();
-      const timeSinceLastChunk = now - lastChunkTime;
-      
-      if (timeSinceLastChunk < MIN_CHUNK_INTERVAL_MS) {
-        // Small delay to ensure chunks aren't sent too quickly
-        // This helps clients like Postman process the stream properly
-        const delay = MIN_CHUNK_INTERVAL_MS - timeSinceLastChunk;
-        setTimeout(() => {
-          sendChunk(chunk);
-        }, delay);
-      } else {
-        sendChunk(chunk);
-      }
-    };
-    
-    // Helper function to send a chunk and update the timestamp
-    const sendChunk = (chunk: string) => {
-      // Send each chunk as a separate line-delimited JSON object
-      response.write(JSON.stringify({ type: 'chunk', text: chunk }) + '\n');
-      
-      // Force flush the response to ensure it's sent immediately
-      if (typeof (response as any).flush === 'function') {
-        (response as any).flush();
-      }
-      
-      lastChunkTime = Date.now();
-    };
-    
-    // Pass the streamHandler callback to aiRunPromptStream
-    const aiResponse = await aiRunPromptStream(
-      systemPrompt,
-      sanitizedMessages, // Use sanitized messages
-      [generateGraphQLQuery, executeGraphQLQuery],
-      model_openai_gpt_4_o,
-      streamHandler
-    );
+  //   if (!messages || !Array.isArray(messages) || messages.length === 0) {
+  //     logger.error('Missing or invalid messages array in request body.');
+  //     throw new CustomError(
+  //       400,
+  //       'Bad request: messages array is required in request body',
+  //       undefined
+  //     );
+  //   } else {
+  //     logger.info(`Processing request, ${JSON.stringify(messages)}`);
+  //   }
 
-    logger.info(`AI Response completed with ${aiResponse.fullText.length} characters`);
+  //   // Validate and sanitize messages
+  //   const sanitizedMessages = messages.map(msg => {
+  //     // Check for single character content that might cause issues
+  //     if (typeof msg.content === 'string' && msg.content.length === 1 && /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(msg.content)) {
+  //       logger.info(`Sanitizing single special character message: ${msg.content}`);
+  //       return {
+  //         ...msg,
+  //         content: `${msg.content} ` // Add a space to prevent issues
+  //       };
+  //     }
+  //     return msg;
+  //   });
 
-    response.write(JSON.stringify({
-        type: 'ai_response',
-        response: aiResponse,
-        completed: false
-      }) + '\n');
+  //   // Set appropriate headers for streaming
+  //   response.setHeader('Content-Type', 'application/x-ndjson'); // Line-delimited JSON
+  //   response.setHeader('Connection', 'keep-alive');
+  //   response.setHeader('Cache-Control', 'no-cache, no-transform');
+  //   response.setHeader('X-Accel-Buffering', 'no'); // Disable buffering for Nginx
     
-    // Try to parse the full response as JSON
-    try {
-      const jsonResponse = cleanJson(aiResponse.fullText);
+  //   logger.info(`Processing request with ${sanitizedMessages.length} messages`);
+    
+  //   // Send initial message
+  //   response.write(JSON.stringify({ type: 'start', status: 'started' }) + '\n');
+    
+  //   // Try to flush the response if the method exists
+  //   // Some Express configurations with compression middleware add this method
+  //   if (typeof (response as any).flush === 'function') {
+  //     (response as any).flush();
+  //   }
+    
+  //   // Track when the last chunk was sent to avoid overwhelming the client
+  //   let lastChunkTime = Date.now();
+  //   const MIN_CHUNK_INTERVAL_MS = 50; // Minimum time between chunks
+    
+  //   // Create a callback function to handle streaming chunks
+  //   const streamHandler = (chunk: string) => {
+  //     // Ensure we don't send chunks too quickly
+  //     const now = Date.now();
+  //     const timeSinceLastChunk = now - lastChunkTime;
       
-      // Send the complete response as a final JSON object
-      response.write(JSON.stringify({
-        type: 'complete',
-        response: jsonResponse,
-        completed: true
-      }) + '\n');
+  //     if (timeSinceLastChunk < MIN_CHUNK_INTERVAL_MS) {
+  //       // Small delay to ensure chunks aren't sent too quickly
+  //       // This helps clients like Postman process the stream properly
+  //       const delay = MIN_CHUNK_INTERVAL_MS - timeSinceLastChunk;
+  //       setTimeout(() => {
+  //         sendChunk(chunk);
+  //       }, delay);
+  //     } else {
+  //       sendChunk(chunk);
+  //     }
+  //   };
+    
+  //   // Helper function to send a chunk and update the timestamp
+  //   const sendChunk = (chunk: string) => {
+  //     // Send each chunk as a separate line-delimited JSON object
+  //     response.write(JSON.stringify({ type: 'chunk', text: chunk }) + '\n');
       
-    } catch (error) {
-      // If parsing fails, return the original text
-      logger.warn(`Failed to parse AI response as JSON: ${error instanceof Error ? error.message : String(error)}`);
-      response.write(JSON.stringify({
-        type: 'complete',
-        response: { answer: aiResponse.fullText },
-        error: "Failed to parse as JSON",
-        completed: true
-      }) + '\n');
-    }
+  //     // Force flush the response to ensure it's sent immediately
+  //     if (typeof (response as any).flush === 'function') {
+  //       (response as any).flush();
+  //     }
+      
+  //     lastChunkTime = Date.now();
+  //   };
     
-    // End the response stream
-    response.end();
-  } catch (err: unknown) {
-    logger.error(err);
-    console.log(err);
+  //   // Pass the streamHandler callback to aiRunPromptStream
+  //   const aiResponse = await aiRunPromptStream(
+  //     systemPrompt,
+  //     sanitizedMessages, // Use sanitized messages
+  //     [generateGraphQLQuery, executeGraphQLQuery],
+  //     model_openai_gpt_4_o,
+  //     streamHandler
+  //   );
+
+  //   logger.info(`AI Response completed with ${aiResponse.fullText.length} characters`);
+
+  //   response.write(JSON.stringify({
+  //       type: 'ai_response',
+  //       response: aiResponse,
+  //       completed: false
+  //     }) + '\n');
     
-    // If headers haven't been sent yet, we can send an error response
-    if (!response.headersSent) {
-      if (err instanceof CustomError) {
-        response.status(Number(err.statusCode)).send(err);
-      } else if (typeof err === 'object' && err !== null && 'statusCode' in err) {
-        response.status(Number((err as { statusCode: number | string }).statusCode)).send(err);
-      } else {
-        response.status(500).send(err);
-      }
-    } else {
-      // If headers have been sent, we need to end the response with an error message
-      response.write(JSON.stringify({
-        type: 'error',
-        error: String(err),
-        completed: true
-      }) + '\n');
-      response.end();
-    }
-  }
+  //   // Try to parse the full response as JSON
+  //   try {
+  //     const jsonResponse = cleanJson(aiResponse.fullText);
+      
+  //     // Send the complete response as a final JSON object
+  //     response.write(JSON.stringify({
+  //       type: 'complete',
+  //       response: jsonResponse,
+  //       completed: true
+  //     }) + '\n');
+      
+  //   } catch (error) {
+  //     // If parsing fails, return the original text
+  //     logger.warn(`Failed to parse AI response as JSON: ${error instanceof Error ? error.message : String(error)}`);
+  //     response.write(JSON.stringify({
+  //       type: 'complete',
+  //       response: { answer: aiResponse.fullText },
+  //       error: "Failed to parse as JSON",
+  //       completed: true
+  //     }) + '\n');
+  //   }
+    
+  //   // End the response stream
+  //   response.end();
+  // } catch (err: unknown) {
+  //   logger.error(err);
+  //   console.log(err);
+    
+  //   // If headers haven't been sent yet, we can send an error response
+  //   if (!response.headersSent) {
+  //     if (err instanceof CustomError) {
+  //       response.status(Number(err.statusCode)).send(err);
+  //     } else if (typeof err === 'object' && err !== null && 'statusCode' in err) {
+  //       response.status(Number((err as { statusCode: number | string }).statusCode)).send(err);
+  //     } else {
+  //       response.status(500).send(err);
+  //     }
+  //   } else {
+  //     // If headers have been sent, we need to end the response with an error message
+  //     response.write(JSON.stringify({
+  //       type: 'error',
+  //       error: String(err),
+  //       completed: true
+  //     }) + '\n');
+  //     response.end();
+  //   }
+  // }
 };
