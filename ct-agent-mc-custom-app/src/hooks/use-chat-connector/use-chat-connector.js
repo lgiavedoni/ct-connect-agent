@@ -28,6 +28,7 @@ export const useChatConnector = () => {
       metadata: {
         graphql_queries: [],
         entities: [],
+        steps: [],
       },
       isMarkdown: true,
     },
@@ -168,13 +169,75 @@ export const useChatConnector = () => {
             
             let fullContent = '';
             
+            // Look for full_ai_response chunk for tool calls and steps
+            const fullAiResponseChunk = streamResponse.chunks.find(
+              chunk => chunk.type === 'full_ai_response' && chunk.response
+            );
+            
+            // If we received the full AI response with stepsPromise data
+            if (fullAiResponseChunk && 
+                fullAiResponseChunk.response && 
+                fullAiResponseChunk.response.stepsPromise && 
+                fullAiResponseChunk.response.stepsPromise.status &&
+                fullAiResponseChunk.response.stepsPromise.status.type === 'resolved') {
+              
+              console.log('Found full_ai_response with steps data');
+              
+              // Debug logging for steps data structure
+              console.log('Debug - First step structure:', JSON.stringify(
+                fullAiResponseChunk.response.stepsPromise.status.value?.[0] || 'No first step'
+              ));
+              console.log('Debug - Steps array length:', 
+                fullAiResponseChunk.response.stepsPromise.status.value?.length || 0
+              );
+              
+              const steps = fullAiResponseChunk.response.stepsPromise.status.value || [];
+              const fullText = fullAiResponseChunk.response.fullText || 
+                              (fullAiResponseChunk.response.textPromise?.status?.value) || '';
+              
+              // Update the message with the final content and steps data
+              setMessages(prevMessages => {
+                return prevMessages.map(msg => {
+                  if (msg.id === streamingMessageId) {
+                    return {
+                      ...msg,
+                      content: fullText,
+                      metadata: {
+                        graphql_queries: [], // Legacy field, can be removed later
+                        entities: [],        // Legacy field, can be removed later
+                        steps: steps,        // New field with steps data
+                      },
+                      isStreaming: false,
+                      isMarkdown: true,
+                    };
+                  }
+                  return msg;
+                });
+              });
+              
+              // We've processed the final response, so we can stop polling
+              if (pollingIntervalRef.current) {
+                clearInterval(pollingIntervalRef.current);
+                pollingIntervalRef.current = null;
+              }
+              
+              // Set streaming and loading to false
+              setIsStreaming(false);
+              setIsLoading(false);
+              
+              // Return early since we've processed the final result
+              return;
+            }
+            
             // If we received the stop polling signal or the request is complete
             // AND we have a finalResponse, use the complete answer
             if ((streamResponse.stopPolling || streamResponse.isComplete) && 
-                 streamResponse.finalResponse && 
-                 streamResponse.finalResponse.answer) {
+                 streamResponse.finalResponse) {
               
               console.log('Using complete answer from finalResponse');
+              
+              // Create a message using the response parser to handle the different formats
+              const parsedMessage = createMessageFromResponse(streamResponse.finalResponse);
               
               // Use the complete answer for final display
               setMessages(prevMessages => {
@@ -182,12 +245,8 @@ export const useChatConnector = () => {
                   if (msg.id === streamingMessageId) {
                     return {
                       ...msg,
-                      // Replace with the complete answer since we're done
-                      content: streamResponse.finalResponse.answer,
-                      metadata: {
-                        graphql_queries: streamResponse.finalResponse.graphql_queries || [],
-                        entities: streamResponse.finalResponse.entities || [],
-                      },
+                      content: parsedMessage.content,
+                      metadata: parsedMessage.metadata,
                       isStreaming: false,
                       isMarkdown: true,
                     };
@@ -401,6 +460,7 @@ export const useChatConnector = () => {
         metadata: {
           graphql_queries: [],
           entities: [],
+          steps: [],
         },
         isStreaming: true,
         isMarkdown: true,
@@ -436,6 +496,7 @@ export const useChatConnector = () => {
           metadata: {
             graphql_queries: [],
             entities: [],
+            steps: [],
           },
         };
         

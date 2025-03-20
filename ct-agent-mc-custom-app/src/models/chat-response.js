@@ -18,6 +18,12 @@ export const ENTITY_TYPES = {
   // Add more entity types as needed
 };
 
+export const TOOL_TYPES = {
+  GRAPHQL_GENERATE: 'generateGraphQLQuery',
+  GRAPHQL_EXECUTE: 'executeGraphQLQuery',
+  // Add more tool types as needed
+};
+
 /**
  * @typedef {Object} GraphQLQuery
  * @property {string} query - The GraphQL query that was executed
@@ -30,10 +36,36 @@ export const ENTITY_TYPES = {
  */
 
 /**
+ * @typedef {Object} ToolCall
+ * @property {string} type - The type of tool call
+ * @property {string} toolCallId - The ID of the tool call
+ * @property {string} toolName - The name of the tool
+ * @property {Object} args - The arguments passed to the tool
+ */
+
+/**
+ * @typedef {Object} ToolResult
+ * @property {string} type - The type of tool result
+ * @property {string} toolCallId - The ID of the tool call
+ * @property {string} toolName - The name of the tool
+ * @property {Object} args - The arguments passed to the tool
+ * @property {Object} result - The result of the tool call
+ */
+
+/**
+ * @typedef {Object} Step
+ * @property {string} stepType - The type of step
+ * @property {string} text - The text response
+ * @property {Array<ToolCall>} toolCalls - The tool calls made in this step
+ * @property {Array<ToolResult>} toolResults - The results of the tool calls
+ */
+
+/**
  * @typedef {Object} ChatResponse
  * @property {string} answer - The text response to the user's request
  * @property {GraphQLQuery[]} [graphql_queries] - Array of GraphQL queries executed
  * @property {Entity[]} [entities] - Array of entities involved in the operation
+ * @property {Array<Step>} [steps] - Array of steps taken to generate the response
  */
 
 /**
@@ -55,7 +87,53 @@ export const parseResponseText = (responseText) => {
     const lines = responseText.split('\n').filter(line => line.trim());
     console.log('Response lines:', lines.length);
     
-    // Look for the complete response first
+    // Look for the full_ai_response type first
+    const fullAiResponseLine = lines.find(line => line.includes('"type":"full_ai_response"'));
+    if (fullAiResponseLine) {
+      try {
+        console.log('Found full_ai_response line');
+        const parsedData = JSON.parse(fullAiResponseLine);
+        if (parsedData.type === 'full_ai_response' && parsedData.response) {
+          console.log('Extracted full_ai_response data');
+          
+          // Check if stepsPromise is available
+          if (parsedData.response.stepsPromise && 
+              parsedData.response.stepsPromise.status &&
+              parsedData.response.stepsPromise.status.type === 'resolved' &&
+              parsedData.response.stepsPromise.status.value) {
+            
+            const steps = parsedData.response.stepsPromise.status.value;
+            console.log('Extracted steps data:', steps.length);
+            
+            // Get the text from textPromise if available
+            let answer = '';
+            if (parsedData.response.textPromise && 
+                parsedData.response.textPromise.status &&
+                parsedData.response.textPromise.status.type === 'resolved') {
+              answer = parsedData.response.textPromise.status.value;
+            } else if (parsedData.response.fullText) {
+              answer = parsedData.response.fullText;
+            }
+            
+            return {
+              answer,
+              steps
+            };
+          }
+          
+          // Fallback to fullText if available
+          if (parsedData.response.fullText) {
+            return {
+              answer: parsedData.response.fullText
+            };
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing full_ai_response line:', e);
+      }
+    }
+    
+    // Look for the complete response if no full_ai_response found
     const completeLine = lines.find(line => line.includes('"type":"complete"'));
     if (completeLine) {
       try {
@@ -128,6 +206,12 @@ export const createMessageFromResponse = (response) => {
     } else if (response?.type === 'complete' && response.response) {
       // It's already in the right format
       responseData = response.response;
+    } else if (response?.type === 'full_ai_response' && response.response) {
+      // Handle the new full_ai_response format
+      responseData = {
+        answer: response.response.fullText || '',
+        steps: response.response.stepsPromise?.status?.value || []
+      };
     } else if (response?.response && typeof response.response === 'object') {
       // It has a response property that's an object
       responseData = response.response;
@@ -151,6 +235,7 @@ export const createMessageFromResponse = (response) => {
     metadata: {
       graphql_queries: responseData?.graphql_queries || [],
       entities: responseData?.entities || [],
+      steps: responseData?.steps || [],
     }
   };
   

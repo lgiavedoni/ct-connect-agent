@@ -1,1 +1,4 @@
-{}
+{
+  "Message.Metadata.StepsCount": "{count, plural, one {# step} other {# steps}}",
+  "Message.Metadata.ToolsCount": "{count, plural, one {# tool} other {# tools}}"
+}

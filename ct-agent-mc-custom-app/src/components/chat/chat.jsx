@@ -245,7 +245,10 @@ const MessageItem = ({ message, isLastInGroup, onConfirmationResponse }) => {
       </div>
       
       {!isUserMessage && message.metadata && isLastInGroup && !message.isStreaming && (
-        <MessageMetadata metadata={message.metadata} />
+        <MessageMetadata 
+          steps={message.metadata.steps} 
+          graphqlQuery={message.metadata.graphql_queries?.[0]?.query} 
+        />
       )}
     </div>
   );
