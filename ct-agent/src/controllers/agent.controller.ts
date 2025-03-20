@@ -268,43 +268,52 @@ export const getStreamChunks = async (request: Request, response: Response): Pro
     const isComplete = ResponseStorage.isComplete(requestId);
     const finalResponse = isComplete ? ResponseStorage.getFinalResponse(requestId) : null;
     
-    // If request is complete, we can optimize the response
+    // Get all chunks since the requested ID
+    const chunks = ResponseStorage.getChunksSince(requestId, sinceId);
+    
+    // If request is complete, verify that a 'complete' chunk is included
     if (isComplete) {
+      // Check if any of the chunks is a 'complete' type
+      const hasCompleteChunk = chunks.some(chunk => chunk.type === 'complete');
+      
+      // If not, add it manually
+      if (!hasCompleteChunk && finalResponse) {
+        logger.info(`Complete chunk missing, adding it to response for ${requestId}`);
+        chunks.push({
+          id: Math.max(...chunks.map(c => c.id), 0) + 1, // Ensure this is highest ID
+          type: 'complete',
+          response: finalResponse,
+          text: finalResponse.answer || '',
+          timestamp: Date.now()
+        });
+      }
+      
+      // If this is the first request and we're complete, optimize the response
       if (sinceId === 0) {
-        // For the first request, return just the final result with no intermediate chunks
         logger.info(`Request ${requestId} is already complete, returning final response directly`);
         
-        response.json({
-          chunks: [{
+        // Ensure there's at least one chunk with the final answer
+        if (chunks.length === 0) {
+          chunks.push({
             id: 1,
             type: 'chunk',
             text: finalResponse?.answer || '',
             timestamp: Date.now()
-          }],
-          isComplete: true,
-          finalResponse,
-          stopPolling: true // Signal to frontend to stop polling
-        });
-        return;
-      } else {
-        // For subsequent requests, return all remaining chunks in one go
-        const chunks = ResponseStorage.getChunksSince(requestId, sinceId);
-        
-        // If there are no new chunks but we're complete, still return the final response
-        // and signal to stop polling
-        response.json({
-          chunks: chunks.length > 0 ? chunks : [],
-          isComplete: true,
-          finalResponse,
-          stopPolling: true // Signal to frontend to stop polling
-        });
-        return;
+          });
+        }
       }
+      
+      // Signal to stop polling
+      response.json({
+        chunks,
+        isComplete: true,
+        finalResponse,
+        stopPolling: true
+      });
+      return;
     }
     
     // For incomplete requests, return chunks as normal
-    const chunks = ResponseStorage.getChunksSince(requestId, sinceId);
-    
     response.json({
       chunks,
       isComplete,
@@ -384,8 +393,8 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
       logger.warn(`Failed to send full object to client: ${error instanceof Error ? error.message : String(error)}`);
     }
 
-   
-      // Store the complete response
+    // Ensure the complete chunk is added BEFORE setting isComplete flag
+    // Store the complete response
     ResponseStorage.addChunk(requestId, {
         type: 'complete',
         response: {answer: aiResponse.fullText},

@@ -3,6 +3,10 @@ GraphQL Notes:
 - Use creating or updating inventory entries for setting inventory, not setInventoryQuantity.
 - Prices are in centAmount, so divide all prices by 100.
 - When possible execute a single mutation with multiple actions
+- When in your query you are Using IDs these has to be specific to your project. 
+  Example: categories: [{ typeId: "category", id: "cad22b7c-ef37-4b5b-9ae7-6c4b9d95d304" }] //You have to replace the id for a valid one
+  Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8a4f7ec462" } //You have to replace the id for a valid one
+  
 
 
 IMPORTANT: in every graphql query/mutation the locale has to be specified in RFC 5646, and your default is "en-US". Do not use "en"

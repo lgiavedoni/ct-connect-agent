@@ -128,7 +128,7 @@ export const generateGraphQLQuery = createNamedTool(
                   `,
     parameters: z.object({
       request: z.string().describe('The natural language request that you want to convert to graphql'),
-      context: z.string().describe('Any additional context/data that will help this tool to create the query. Example: If you want to do something with a specific object, provide the object id.'),
+      context: z.string().describe('Any additional context/data that will help this tool to create the query. Example: If you want to do something with a specific object, provide the at least the object id. If you have the entire object, provide the entire object, much better'),
       failed_previous_queries: z.array(z.string()).describe('ALL the previous queries that have been executed and failed (include the error message in the query). Send an empty array if there are no previous queries.')
     }),
     execute: async ({ request, failed_previous_queries = [], context = '' }) => {
