@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger.utils';
-import { aiRunPrompt, aiRunPromptWithUserPrompt, model_flash_thinking, model_openai_gpt_4_o, model_openai_o3_mini, aiRunPromptStream } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, model_flash_thinking, model_openai_gpt_4_o, model_openai_o3_mini, aiRunPromptStream, model_openai_gpt_4_5 } from '../client/ai.client';
 import { Message } from 'ai';
 import graphqlClient from '../client/graphqlExecution.client'; 
 import CustomError from '../errors/custom.error';
@@ -378,6 +378,8 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
       messages,
       [generateGraphQLQuery, executeGraphQLQuery],
       model_openai_gpt_4_o,
+      // model_openai_gpt_4_5,
+      // model_flash_thinking,
       streamHandler
     );
 
@@ -390,7 +392,17 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
         text: pendingChunkText
       });
     }
-    
+
+    //Send the full object to the client
+    try {
+      ResponseStorage.addChunk(requestId, {
+        type: 'full_ai_response',
+        response: aiResponse
+      });
+    } catch (error) {
+      logger.warn(`Failed to send full object to client: ${error instanceof Error ? error.message : String(error)}`);
+    }
+
     // Try to parse the full response as JSON
     try {
       const jsonResponse = cleanJson(aiResponse.fullText);
