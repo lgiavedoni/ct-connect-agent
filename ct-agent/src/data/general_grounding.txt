@@ -818,3 +818,47 @@ query OrdersByCustomerEmail {
     }
   }
 }
+
+
+mutation {
+  createCartDiscount(draft: {
+    name: { locale: "en-US", value: "10% off for VIP Customers" }
+    description: { locale: "en-US", value: "10% discount for customers in the VIP Customers group." }
+    value: { relative: { permyriad: 1000 } }
+    cartPredicate: "customer.customerGroup.id = \"47cdf1d6-68f7-41c0-89da-d5f64b581485\""
+    target: { totalPrice: {} }
+    isActive: true
+    requiresDiscountCode: false
+    sortOrder: "0.968"
+  }) {
+    id
+    version
+    name(locale: "en-US")
+    description(locale: "en-US")
+    
+    cartPredicate
+    isActive
+    requiresDiscountCode
+    sortOrder
+  }
+}
+
+
+mutation RemoveCustomerFromGroup {
+  updateCustomer(
+    id: "b67d9a91-273a-48f4-8c94-9b66ae1e1693"
+    version: 22
+    actions: [{removeCustomerGroupAssignment: {customerGroup: {typeId: "customer-group", id: "47cdf1d6-68f7-41c0-89da-d5f64b581485"}}}]
+  ) {
+    id
+    version
+  }
+}
+
+mutation {
+  createCustomerGroup(draft: {groupName: "VIP", key: "vip-customer-group"}) {
+    id
+    version
+    name
+  }
+}

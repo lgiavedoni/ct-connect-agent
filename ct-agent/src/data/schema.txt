@@ -274,3 +274,19 @@ input DiscountCodeDraft {
   validUntil: DateTime
   groups: [String!] = []
 }
+
+input ResourceIdentifierInput {
+  typeId: String
+  id: String
+  key: String
+}
+
+input RemoveCustomerGroupAssignment {
+  customerGroup: ResourceIdentifierInput!
+}
+
+input CustomerGroupDraft {
+  groupName: String!
+  key: String
+  custom: CustomFieldsDraft
+}
