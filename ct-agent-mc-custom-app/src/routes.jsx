@@ -1,6 +1,7 @@
 import { Switch, Route, useRouteMatch } from 'react-router-dom';
 import Spacings from '@commercetools-uikit/spacings';
 import Chat from './components/chat';
+import FloatingChat from './components/floating-chat';
 
 const ApplicationRoutes = () => {
   const match = useRouteMatch();
@@ -17,16 +18,21 @@ const ApplicationRoutes = () => {
    */
 
   return (
-    <Spacings.Inset scale="l">
-      <Switch>
-        <Route path={`${match.path}/chat`}>
-          <Chat />
-        </Route>
-        <Route>
-          <Chat/>
-        </Route>
-      </Switch>
-    </Spacings.Inset>
+    <>
+      <Spacings.Inset scale="l">
+        <Switch>
+          <Route path={`${match.path}/chat`}>
+            <Chat />
+          </Route>
+          <Route>
+            <Chat/>
+          </Route>
+        </Switch>
+      </Spacings.Inset>
+      
+      {/* Floating Chat Bubble displayed on all routes */}
+      <FloatingChat />
+    </>
   );
 };
 ApplicationRoutes.displayName = 'ApplicationRoutes';
