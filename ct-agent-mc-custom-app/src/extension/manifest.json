@@ -1,0 +1,14 @@
+{
+    "manifest_version": 3,
+    "name": "MC Floating Chat",
+    "version": "1.0",
+    "description": "MC Floating Chat",
+    "content_scripts": [
+      {
+        "matches": ["https://mc.us-central1.gcp.commercetools.com/luciano-test/*"],
+        "js": ["floating-chat.js"],
+        "css": ["styles.css"]
+      }
+    ]
+    
+  }
