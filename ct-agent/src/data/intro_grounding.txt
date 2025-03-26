@@ -226,3 +226,19 @@ This is the correct example:
             total
           }
         }
+
+
+type Mutation {
+  deleteCartDiscount(version: Long!,
+
+    "The mutation is only performed if the resource is part of the store. Can be used with store-specific OAuth permissions."
+    storeKey: KeyReferenceInput,
+
+    "Queries with specified ID"
+    id: String,
+
+    "Queries with specified key"
+    key: String): CartDiscount
+}
+
+IMPORTANT: Field 'sortOrder' is not defined by type 'DiscountCodeDraft'. So never include it

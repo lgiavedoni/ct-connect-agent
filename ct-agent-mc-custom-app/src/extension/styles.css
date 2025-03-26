@@ -400,3 +400,69 @@
         padding-left: 12px;
         color: #666666;
       }
+      
+      /* Confirmation message styles */
+      .message-item.confirmation {
+        background-color: #fdf8e7 !important;  /* Light yellow background */
+        border: 1px solid #f2c200 !important;  /* Yellow border */
+        position: relative;
+        padding: 12px !important;
+      }
+      
+      .confirmation-buttons {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      
+      .confirmation-button {
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 14px;
+        transition: background-color 0.2s;
+      }
+      
+      .no-button {
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        color: #333;
+      }
+      
+      .no-button:hover {
+        background-color: #eaeaea;
+      }
+      
+      .yes-button {
+        background-color: #8F8FFF;
+        border: 1px solid #8F8FFF;
+        color: white;
+      }
+      
+      .yes-button:hover {
+        background-color: #5252FF;
+      }
+      
+      .confirmation-response {
+        margin-top: 10px;
+        padding: 6px 0;
+        font-size: 14px;
+      }
+      
+      .confirmation-response .positive {
+        color: #078522;
+        font-weight: 500;
+      }
+      
+      .confirmation-response .negative {
+        color: #d93025;
+        font-weight: 500;
+      }
+      
+      .confirmation-log {
+        font-size: 12px;
+        color: #666;
+        margin-top: 4px;
+        font-style: italic;
+      }

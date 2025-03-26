@@ -10,11 +10,14 @@
   const parseMarkdown = (text) => {
     if (!text || typeof text !== 'string') return '';
 
-    // First, handle the confirmation tag if present
-    text = text.replace('#CONFIRMATION_NEEDED', '');
+    // Make a copy of the original text for rendering
+    let displayText = text;
+    
+    // Remove confirmation tag from display text only
+    displayText = displayText.replace('#CONFIRMATION_NEEDED', '');
 
     // Process lists first to handle them properly
-    let processedLists = text;
+    let processedLists = displayText;
     
     // Process bullet lists (both * and - style)
     const bulletListRegex = /^[\s]*[-*][\s]+(.*?)$/gm;
@@ -28,13 +31,13 @@
       let lastIndex = 0;
       let inList = false;
       
-      [...text.matchAll(bulletListRegex)].forEach(match => {
+      [...displayText.matchAll(bulletListRegex)].forEach(match => {
         const [fullMatch, content] = match;
         const startIndex = match.index;
         
         // Add non-list content before this item
         if (startIndex > lastIndex) {
-          const nonListContent = text.substring(lastIndex, startIndex);
+          const nonListContent = displayText.substring(lastIndex, startIndex);
           if (nonListContent.trim()) {
             processedLists += inList ? '</ul>\n' + nonListContent + '\n<ul>\n' : nonListContent + '\n<ul>\n';
           }
@@ -48,8 +51,8 @@
       
       // Close the list and add any remaining content
       processedLists += '</ul>\n';
-      if (lastIndex < text.length) {
-        processedLists += text.substring(lastIndex);
+      if (lastIndex < displayText.length) {
+        processedLists += displayText.substring(lastIndex);
       }
     }
 
@@ -260,7 +263,10 @@
         graphql_queries: responseData?.graphql_queries || [],
         entities: responseData?.entities || [],
         steps: responseData?.steps || [],
-      }
+      },
+      // Add confirmation state
+      needsConfirmation: content.includes('#CONFIRMATION_NEEDED'),
+      confirmationResponse: undefined
     };
     
     return message;
@@ -573,6 +579,15 @@
       const messageItem = document.createElement('div');
       messageItem.className = `message-item ${message.role === 'user' ? 'user' : message.role === 'system' || message.role === 'error' ? 'error' : 'ai'}`;
       
+      // Check if this is a confirmation message (for AI messages only)
+      const isConfirmationMessage = message.role === 'assistant' && 
+        (message.needsConfirmation || message.content.includes('#CONFIRMATION_NEEDED'));
+      
+      // Add confirmation class if needed
+      if (isConfirmationMessage) {
+        messageItem.classList.add('confirmation');
+      }
+      
       // For user messages, just use the content as-is
       if (message.role === 'user') {
         messageItem.textContent = message.content;
@@ -582,6 +597,47 @@
         contentDiv.className = 'ai-message-content';
         contentDiv.innerHTML = formatMessageContent(message.content, true);
         messageItem.appendChild(contentDiv);
+        
+        // Add confirmation buttons if this is a confirmation message without a response yet
+        if (isConfirmationMessage && message.confirmationResponse === undefined) {
+          const buttonsContainer = document.createElement('div');
+          buttonsContainer.className = 'confirmation-buttons';
+          
+          const noButton = document.createElement('button');
+          noButton.className = 'confirmation-button no-button';
+          noButton.textContent = 'No';
+          noButton.addEventListener('click', () => this.handleConfirmationResponse(message.id, false));
+          
+          const yesButton = document.createElement('button');
+          yesButton.className = 'confirmation-button yes-button';
+          yesButton.textContent = 'Yes';
+          yesButton.addEventListener('click', () => this.handleConfirmationResponse(message.id, true));
+          
+          buttonsContainer.appendChild(noButton);
+          buttonsContainer.appendChild(yesButton);
+          messageItem.appendChild(buttonsContainer);
+        }
+        
+        // Show confirmation response if it exists
+        if (isConfirmationMessage && message.confirmationResponse !== undefined) {
+          const responseContainer = document.createElement('div');
+          responseContainer.className = 'confirmation-response';
+          
+          const responseText = document.createElement('span');
+          responseText.textContent = message.confirmationResponse ? 'Confirmed' : 'Cancelled';
+          responseText.className = message.confirmationResponse ? 'positive' : 'negative';
+          
+          responseContainer.appendChild(responseText);
+          messageItem.appendChild(responseContainer);
+          
+          // Add timestamp info for the confirmation
+          if (message.confirmationTimestamp) {
+            const confirmationLog = document.createElement('div');
+            confirmationLog.className = 'confirmation-log';
+            confirmationLog.textContent = `Action ${message.confirmationResponse ? 'confirmed' : 'cancelled'} at ${this.formatTimestamp(message.confirmationTimestamp)}`;
+            messageItem.appendChild(confirmationLog);
+          }
+        }
       }
       
       messageWrapper.appendChild(messageItem);
@@ -1167,6 +1223,40 @@
         clearInterval(this.pollingInterval);
         this.pollingInterval = null;
       }
+    }
+    
+    // Add method to handle confirmation responses
+    handleConfirmationResponse(messageId, confirmed) {
+      const timestamp = new Date().toISOString();
+      
+      // Update the message with the confirmation response
+      this.state.messages = this.state.messages.map(msg => {
+        if (msg.id === messageId) {
+          return { 
+            ...msg, 
+            confirmationResponse: confirmed,
+            confirmationTimestamp: timestamp
+          };
+        }
+        return msg;
+      });
+      
+      // Render the updated messages
+      this.renderMessages();
+      
+      // If confirmed, send a follow-up message to proceed
+      if (confirmed) {
+        this.sendUserMessage("Yes, proceed.");
+      } else {
+        this.sendUserMessage("No, don't proceed.");
+      }
+    }
+    
+    // Format timestamp for display
+    formatTimestamp(timestamp) {
+      if (!timestamp) return '';
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
   }
   

@@ -157,7 +157,9 @@ const systemPrompt: string = `
       If you need te generate and execute several GraphQL queries to solve the user's request that is ok.
       When there is an error with the GraphQL query, you will need to fix it by using the generateGraphQLQuery tool again and providing the error message.
       *** Critical, if you are going to update/delete/create an entity (basically any mutation) , you first have to ask user for confirmation providing useful information about the entity. And ALWAYS provide the entity's id and also include the hashtag (#CONFIRMATION_NEEDED) in the message.***
+      *** Critical, if you want to ask confrimation to the user before  update/delete/create an entity, when asking  ALWAYS include  hashtag (#CONFIRMATION_NEEDED) in the message.***
       *** CRITICAL, if you see that any tool retrives a mutation query and you have not requested approval, you need to ask the user for confirmation.***
+      Never ask the user for versions of the entities. If you need to know the latest versions use your tools.
 
     </rules>
     <context>

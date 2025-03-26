@@ -862,3 +862,5 @@ mutation {
     name
   }
 }
+
+query { cartDiscounts { results { id name(locale: \"en-US\") description(locale: \"en-US\") value { ... on RelativeDiscountValue { permyriad } } isActive sortOrder } } }

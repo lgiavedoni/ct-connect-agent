@@ -3,10 +3,32 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_flash_thinking, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
 import { FileUtils } from '../utils/file.utils';
+import axios from 'axios';
 
-const graphql_schema = `
-  https://github.com/commercetools/commercetools-api-reference/blob/main/api-specs/graphql/schema.sdl
+const graphql_schema_url = `
+  https://raw.githubusercontent.com/commercetools/commercetools-api-reference/refs/heads/main/api-specs/graphql/schema.sdl
 `;
+
+// Variable to store the GraphQL schema
+let graphql_schema = '';
+
+// Fetch the GraphQL schema from the URL
+async function fetchGraphQLSchema() {
+  try {
+    const response = await axios.get(graphql_schema_url.trim());
+    graphql_schema = response.data;
+    logger.info('Successfully loaded GraphQL schema');
+    return response.data;
+  } catch (error) {
+    logger.error('Failed to load GraphQL schema', error);
+    return 'Error loading schema. Please check the URL and try again.';
+  }
+}
+
+// Initialize by fetching the schema
+fetchGraphQLSchema().then(schema => {
+  graphql_schema = schema;
+});
 
 // Load grounding files content
 let groundingContent_1, groundingContent_2, groundingContent_schema = '';
@@ -55,19 +77,22 @@ const systemPrompt = `
             - Example of a good name for DiscountCode.code: "SUMMER_SALE_2025"
             
 
-            Use the following schema as a reference:
-            ${graphql_schema}
-
+            
             By default (unless directly specified) always use current and master variant. Example: { products { results { id version masterData { current { masterVariant { id prices { id value { centAmount currencyCode } } } } } } } }
             When you make changes on product, ask the user if they want to publish the changes. Bc those changes won't be "online" till they have the status as published.
             
             Use the following grounding to help you:
+            <grounding_examples>
             ${groundingContent_1}
-            
             ${groundingContent_2}
-
-            And additional grounding for the schema:
             ${groundingContent_schema}
+            </grounding_examples>
+            
+            
+            Use the following schema as a reference:
+            <commercetools_schema>
+            ${graphql_schema}
+            </commercetools_schema>
 
             <return_format>
               Always return the following JSON structure:
@@ -134,6 +159,12 @@ export const generateGraphQLQuery = createNamedTool(
     execute: async ({ request, failed_previous_queries = [], context = '' }) => {
       logger.info(`Generating GraphQL query for request: ${request}, with previous queries [${failed_previous_queries.length}] and context: ${context}`);//, \n Previous queries: ${failed_previous_queries}
 
+      // Ensure schema is loaded before proceeding
+      if (!graphql_schema) {
+        logger.info('Schema not loaded yet, fetching it now...');
+        graphql_schema = await fetchGraphQLSchema();
+      }
+
       if (context) {
         request = `${request}\n\n Additional context: ${context}`;
       }
@@ -148,7 +179,7 @@ export const generateGraphQLQuery = createNamedTool(
                   `;
       }
 
-      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_flash_thinking);//model_openai_gpt_4_o
+      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_openai_gpt_4_o);//model_flash_thinking);//model_openai_gpt_4_o
       
       // Clean the generated query
       const cleanedQuery = cleanGraphQLQuery(generatedQuery);
