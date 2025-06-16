@@ -4,7 +4,7 @@
   const MAX_TEXTAREA_HEIGHT = 120;
   const AUTH_TOKEN_KEY = 'ct_auth_token';
   const URL_CHECK_INTERVAL_MS = 500;
-  const API_URL = 'https://92c0-188-26-215-219.ngrok-free.app';
+  const API_URL = 'https://service-s40725me21hhktlyrt7p91z1.us-central1.gcp.2.commercetools.app';
   
   // Utility functions for markdown parsing
   const parseMarkdown = (text) => {
