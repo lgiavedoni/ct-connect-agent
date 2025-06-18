@@ -16,8 +16,10 @@ export const model_flash_thinking = googleAI('gemini-2.0-flash-thinking-exp-01-2
 export const model_anthropic_3_7 = anthropic('claude-3-7-sonnet-20250219');
 export const model_openai_o1_mini = openai('o1-mini');
 export const model_openai_o3_mini = openai('o3-mini');
+export const model_openai_o4_mini = openai('o4-mini');
 export const model_openai_gpt_4_5 = openai('gpt-4.5-preview');
 export const model_openai_gpt_4_o = openai('gpt-4o');
+export const model_openai_gpt_4_1 = openai('gpt-4.1');
 
 /**
  * Helper function to create a tool with a name

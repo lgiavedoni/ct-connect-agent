@@ -864,3 +864,12 @@ mutation {
 }
 
 query { cartDiscounts { results { id name(locale: \"en-US\") description(locale: \"en-US\") value { ... on RelativeDiscountValue { permyriad } } isActive sortOrder } } }
+
+//setCustomerGroup to customer
+
+mutation {
+  updateCustomer( id: "b67d9a91-273a-48f4-8c94-9b66ae1e1693"
+                  version: 26    actions: [      {setCustomerGroup: {customerGroup: {typeId: "customer-group", id: "72cc84e6-3c26-4d53-83b0-0f25dead9d6b"}}}    ]  
+                ) 
+                  {    id    version    customerNumber    email    customerGroup {      id      name      key    }  }
+  }

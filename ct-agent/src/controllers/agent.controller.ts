@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger.utils';
-import { aiRunPrompt, aiRunPromptWithUserPrompt, model_flash_thinking, model_openai_gpt_4_o, model_openai_o3_mini, aiRunPromptStream, model_openai_gpt_4_5 } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, model_flash_thinking, model_openai_gpt_4_o, model_openai_o3_mini, aiRunPromptStream, model_openai_gpt_4_5, model_openai_gpt_4_1 } from '../client/ai.client';
 import { Message } from 'ai';
 import graphqlClient from '../client/graphqlExecution.client'; 
 import CustomError from '../errors/custom.error';
@@ -369,7 +369,8 @@ async function processAgentRequest(requestId: string, messages: Message[]): Prom
       systemPrompt,
       messages,
       [generateGraphQLQuery, executeGraphQLQuery],
-      model_openai_gpt_4_o,
+      // model_openai_gpt_4_o,
+      model_openai_gpt_4_1,
       // model_openai_gpt_4_5,
       // model_flash_thinking,
       streamHandler

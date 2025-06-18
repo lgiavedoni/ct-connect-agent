@@ -20,3 +20,10 @@ Use `create-connect-app` cli with `starter-typescript` as `template` value to do
 * Connectors should be point to point in nature, currently doesnt support any persistence capabilities apart from in memory persistence
 * Connector solution should use open source technologies, although connector itself can be private for specific customer(s)
 * Code should not contain console.log statements, use [the included logger](https://github.com/commercetools/merchant-center-application-kit/tree/main/packages-backend/loggers#readme) instead.
+
+
+
+
+ngrok http 3000
+ct-agent-mc-custom-app % yarn start
+ct-agent % npm run dev

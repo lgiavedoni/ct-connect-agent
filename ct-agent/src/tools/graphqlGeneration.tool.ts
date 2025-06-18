@@ -1,7 +1,7 @@
 import { logger } from '../utils/logger.utils';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_anthropic_3_7, model_flash, model_flash_thinking, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
+import { aiRunPrompt, aiRunPromptWithUserPrompt, createNamedTool, model_openai_gpt_4_1,model_anthropic_3_7, model_flash, model_flash_thinking, model_openai_gpt_4_o, model_openai_o1_mini, model_openai_o3_mini } from '../client/ai.client';
 import { FileUtils } from '../utils/file.utils';
 import axios from 'axios';
 
@@ -179,7 +179,7 @@ export const generateGraphQLQuery = createNamedTool(
                   `;
       }
 
-      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_openai_gpt_4_o);//model_flash_thinking);//model_openai_gpt_4_o
+      const generatedQuery = await aiRunPromptWithUserPrompt(systemPrompt, request, undefined, model_openai_gpt_4_1);//model_flash_thinking);//model_openai_gpt_4_o
       
       // Clean the generated query
       const cleanedQuery = cleanGraphQLQuery(generatedQuery);
