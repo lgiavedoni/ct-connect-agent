@@ -6,6 +6,7 @@ GraphQL Notes:
 - When in your query you are Using IDs these has to be specific to your project. 
   Example: categories: [{ typeId: "category", id: "cad22b7c-ef37-4b5b-9ae7-6c4b9d95d304" }] //You have to replace the id for a valid one
   Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8a4f7ec462" } //You have to replace the id for a valid one
+- When you are retrieving an entity, if it has a version attribute always include that into your query, you might need it latter in case of updates
   
 
 
@@ -23,13 +24,32 @@ mutation {
 - When creating a product you have to provide an ID for the proper Product type. So find the best type that fits your needs, if you are not sure you can ask the human. Start with the basic types with none of few attributes
 Example: productType: { typeId: "product-type", id: "19d766d7-f2d4-4557-ade6-2b8a4f7ec462" }
 - Attribute name in commercetools can only contain alphanumeric characters
-- When you change the name, description or similar always send the entire set to ensure that we don't  lose translations. Example:
-{
-  "action": "changeName",
-  "name": {
-    "de": "Mein neuer Produkt Name",
-    "en": "My new product name"
-  }
+
+- When you translate (or set a new value for a new locale) the name, description or similar always send the entire set of data (to ensure that we don;t  lose the initial value)
+- So you have to load first the current values and then do the mutation
+Example: If we have a name in de and we want to translate to en we do it like (first loading the values):
+mutation {
+		updateCartDiscount(    
+			id: "b5285a25-6612-4907-a4f8-73c185b94829"   
+			version: 7
+			actions: [	
+			      { changeName: { name: [
+			              { locale: "de-DE", value: "Warenkorbrabatt" }
+			              { locale: "en-US", value: "Cart Discount" }
+			              ] } 
+			       },      
+			       { setDescription: { description: [
+				               { locale: "de-DE", value: "Rabatt wird beim Checkout auf Ihren Warenkorb angewendet." },
+				               { locale: "en-US", value: "Discount is applied to your cart at checkout." }
+			               ] } 
+			        }    ]  ) 
+		{    id
+		    version
+		    nameEn: name(locale: "en-US")
+		    nameDe: name(locale: "de-DE")
+		    descriptionEn: description(locale: "en-US")
+		    descriptionDe: description(locale: "de-DE")  
+		 }
 }
 
 - Here is the price structure: prices: [

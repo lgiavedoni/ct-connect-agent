@@ -1,15 +1,3 @@
-- When you change the name, description or similar always send the entire set to ensure that we don;t  lose translations. Example:
-{
-  "action": "changeName",
-  "name": {
-    "de": "Mein neuer Produkt Name",
-    "en": "My new product name"
-  }
-}
-
-
-
-
 GraphQL Example Queries and Mutations:
 
 query OrdersLastMonth {
